@@ -87,6 +87,65 @@ Preferred communication style: Simple, everyday language.
 - Server-side session validation on protected endpoints
 - User seeding with default credentials for each role
 
+**Detailed Permission Matrix**
+
+The system implements fine-grained permissions for each role across all features:
+
+*Admin Role* (role: admin)
+- Full system access including user management, service center configuration
+- Can approve price lists, configure fraud triggers, and adjust honesty scores
+- Can reopen closed tickets and make quality control calls
+- Full access to dashboard statistics and fraud alerts
+- Can edit SMS templates
+
+*Operator Role* (role: operator)
+- Full access to operator panel for handling incoming calls
+- Can create and manage tickets with limited status changes
+- Full customer data access and warranty checking
+- Can view fraud alerts as warnings
+- Own metrics visible on dashboard
+- Can make quality control calls
+
+*Master Role* (role: master)
+- Mobile app access for field service
+- Can only update own ticket statuses: On the way → Arrived → Before/After photo → Close
+- Mandatory photo uploads (before/after) and GPS tracking
+- Can collect electronic signatures from customers
+- Can add payments for out-of-warranty items (blocked for warranty items)
+- Limited customer data access (only current job's customer)
+- Own rating/statistics visible on dashboard
+- Can only see own fraud alerts
+
+**Default User Credentials**
+- Admin: username=admin, password=admin2233
+- Operator: username=operator, password=callcenter123
+- Master: username=master, password=MS123
+
+**Feature-by-Feature Permission Matrix**
+
+| Feature / Screen | ADMIN | OPERATOR | MASTER | Notes |
+|-----------------|-------|----------|---------|-------|
+| Login to system | Yes | Yes | Yes | All roles can authenticate |
+| Operator panel (incoming call popup + script) | View only | Full access | No access | Only active operators receive calls |
+| Create new ticket | Yes | Yes | No | Operators handle ticket creation |
+| View / edit customer card (CDP) | Yes | Yes | Only current job's customer | Master sees only assigned customer |
+| Check warranty by serial number | Yes | Yes | Read-only | Masters cannot modify warranty status |
+| Change ticket status | Yes | Limited statuses | Only own statuses | Masters: On the way → Arrived → Before/After photo → Close |
+| Upload Before / After photos | No | No | Yes (mandatory) | Required for job completion |
+| Add payment | Can unblock only | No | Yes (if not under warranty) | Payment blocked automatically on warranty items |
+| Collect electronic signature | No | No | Yes | Required from customer at job completion |
+| GPS tracking / route display | No | No | Yes (mandatory) | Real-time location tracking for masters |
+| Service centers list (add/edit/delete) | Yes | No | No | Admin-only configuration |
+| Masters management (add/block/unblock) | Yes | No | No | Admin-only user management |
+| Approve price list | Yes | No | No | Admin-only pricing control |
+| Configure fraud triggers | Yes | No | No | Admin sets distance, time thresholds |
+| Manually adjust honesty score / penalty points | Yes | No | No | Admin can override scores |
+| Reopen closed tickets | Yes | No | No | Admin can reopen for quality issues |
+| Real-time dashboard (full statistics) | Yes | Own metrics only | Own rating only | Role-scoped visibility |
+| View fraud alerts & HOLD tickets | Yes | Warning only | Only own alerts | Different alert severity by role |
+| Make control (quality) call to customer | Yes | Yes | No | Post-service quality assurance |
+| Edit SMS templates | Yes | No | No | Admin-only template management |
+
 ### External Dependencies
 
 **Third-Party UI Libraries**
