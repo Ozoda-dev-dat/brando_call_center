@@ -1,20 +1,35 @@
-import { Headphones, FileText, Users, MapPin, UserCheck, LayoutDashboard, Settings, FileBarChart } from 'lucide-react';
+import { Headphones, FileText, Users, MapPin, UserCheck, LayoutDashboard, Settings, FileBarChart, LogOut } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { ThemeToggle } from './ThemeToggle';
+import { useAuth } from '@/hooks/use-auth';
+import { Button } from './ui/button';
 
 const menuItems = [
-  { id: 'operator', label: 'Operator', icon: Headphones, path: '/' },
-  { id: 'tickets', label: 'Buyurtmalar', icon: FileText, path: '/tickets' },
-  { id: 'customers', label: 'Mijozlar', icon: Users, path: '/customers' },
-  { id: 'service-centers', label: 'Xizmat Markazlari', icon: MapPin, path: '/service-centers' },
-  { id: 'masters', label: 'Ustalar', icon: UserCheck, path: '/masters' },
-  { id: 'dashboard', label: 'Boshqaruv Paneli', icon: LayoutDashboard, path: '/dashboard' },
-  { id: 'reports', label: 'Hisobotlar', icon: FileBarChart, path: '/reports' },
-  { id: 'admin', label: 'Admin', icon: Settings, path: '/admin' }
+  { id: 'operator', label: 'Operator', icon: Headphones, path: '/', roles: ['admin', 'operator'] },
+  { id: 'tickets', label: 'Buyurtmalar', icon: FileText, path: '/tickets', roles: ['admin', 'operator'] },
+  { id: 'customers', label: 'Mijozlar', icon: Users, path: '/customers', roles: ['admin', 'operator'] },
+  { id: 'service-centers', label: 'Xizmat Markazlari', icon: MapPin, path: '/service-centers', roles: ['admin', 'operator'] },
+  { id: 'masters', label: 'Ustalar', icon: UserCheck, path: '/masters', roles: ['admin', 'operator', 'master'] },
+  { id: 'dashboard', label: 'Boshqaruv Paneli', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'operator'] },
+  { id: 'reports', label: 'Hisobotlar', icon: FileBarChart, path: '/reports', roles: ['admin', 'operator'] },
+  { id: 'admin', label: 'Admin', icon: Settings, path: '/admin', roles: ['admin'] }
 ];
 
 export function Sidebar() {
   const [location] = useLocation();
+  const { user, logout } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
+  const visibleMenuItems = menuItems.filter(item => 
+    user && item.roles.includes(user.role)
+  );
 
   return (
     <div className="w-60 bg-white border-r border-gray-200 h-screen flex flex-col">
@@ -27,7 +42,7 @@ export function Sidebar() {
       </div>
       
       <nav className="flex-1 p-4 space-y-1">
-        {menuItems.map((item) => {
+        {visibleMenuItems.map((item) => {
           const Icon = item.icon;
           const isActive = location === item.path;
           
@@ -53,10 +68,20 @@ export function Sidebar() {
       </nav>
       
       <div className="p-4 border-t border-gray-200">
-        <div className="text-xs text-gray-500" data-testid="operator-info">
-          <p>Operator: Nigora Sharipova</p>
-          <p className="mt-1">Faol vaqt: 2:34:18</p>
+        <div className="mb-3" data-testid="user-info">
+          <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
+          <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
         </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="w-full gap-2" 
+          onClick={handleLogout}
+          data-testid="button-logout"
+        >
+          <LogOut className="w-4 h-4" />
+          Chiqish
+        </Button>
       </div>
     </div>
   );
