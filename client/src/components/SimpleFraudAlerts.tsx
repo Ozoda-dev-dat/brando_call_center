@@ -1,10 +1,30 @@
-import { AlertTriangle, XCircle } from 'lucide-react';
+import { AlertTriangle, XCircle, Info } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { mockFraudAlerts } from '@/data/mockData';
+import { Badge } from '@/components/ui/badge';
+import { mockFraudAlerts, mockMasters } from '@/data/mockData';
+import { useAuth } from '@/hooks/use-auth';
+import { getPermissions } from '@/lib/permissions';
 
 export function SimpleFraudAlerts() {
-  const activeAlerts = mockFraudAlerts.filter(a => !a.resolved);
+  const { user } = useAuth();
+  const permissions = user ? getPermissions(user.role) : null;
+
+  let filteredAlerts = mockFraudAlerts.filter(a => !a.resolved);
+
+  if (permissions?.canViewOwnFraudAlertsOnly) {
+    // TODO: In production, user object should include masterId field from database
+    // For now, using mock data with fixed master ID for demonstration
+    // Production implementation would use: user.masterId
+    const currentMaster = mockMasters.find(m => m.code === 'MS-042');
+    if (currentMaster) {
+      filteredAlerts = filteredAlerts.filter(a => a.masterId === currentMaster.id);
+    } else {
+      filteredAlerts = [];
+    }
+  }
+
+  const activeAlerts = filteredAlerts;
 
   return (
     <div className="space-y-4">
@@ -17,6 +37,17 @@ export function SimpleFraudAlerts() {
           {activeAlerts.length} faol
         </span>
       </div>
+
+      {permissions?.canViewFraudAlertsAsWarning && (
+        <Card className="p-3 bg-yellow-50 border-yellow-300">
+          <div className="flex items-start gap-2">
+            <Info className="w-4 h-4 text-yellow-700 mt-0.5 flex-shrink-0" />
+            <p className="text-xs text-yellow-800">
+              Operator sifatida bu ogohlantirishlarni faqat ko'rishingiz mumkin. Admin harakatlar amalga oshiradi.
+            </p>
+          </div>
+        </Card>
+      )}
 
       <div className="space-y-3">
         {activeAlerts.map((alert) => {
@@ -62,25 +93,32 @@ export function SimpleFraudAlerts() {
                 </div>
               </div>
 
-              <div className="flex gap-2">
-                <Button 
-                  size="sm" 
-                  variant="destructive" 
-                  className="flex-1 text-xs"
-                  data-testid={`button-review-alert-${alert.id}`}
-                >
-                  Ko'rib Chiqish
-                </Button>
-                <Button 
-                  size="sm" 
-                  variant="outline" 
-                  className="flex-1 text-xs border-red-600 text-red-700"
-                  data-testid={`button-resolve-alert-${alert.id}`}
-                >
-                  <XCircle className="w-3 h-3 mr-1" />
-                  Yopish
-                </Button>
-              </div>
+              {permissions?.canResolveFraudAlerts && (
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="destructive" 
+                    className="flex-1 text-xs"
+                    data-testid={`button-review-alert-${alert.id}`}
+                  >
+                    Ko'rib Chiqish
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    className="flex-1 text-xs border-red-600 text-red-700"
+                    data-testid={`button-resolve-alert-${alert.id}`}
+                  >
+                    <XCircle className="w-3 h-3 mr-1" />
+                    Yopish
+                  </Button>
+                </div>
+              )}
+              {permissions?.canViewFraudAlertsAsWarning && (
+                <Badge variant="outline" className="w-full justify-center border-yellow-600 text-yellow-700 text-xs">
+                  Faqat ko'rish rejimi
+                </Badge>
+              )}
             </Card>
           );
         })}

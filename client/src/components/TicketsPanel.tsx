@@ -4,6 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { mockTickets } from '@/data/mockData';
+import { useAuth } from '@/hooks/use-auth';
+import { getPermissions } from '@/lib/permissions';
 import type { TicketStatus } from '@shared/crm-schema';
 
 const statusLabels: Record<TicketStatus, string> = {
@@ -37,6 +39,9 @@ const statusColors: Record<string, string> = {
 };
 
 export function TicketsPanel() {
+  const { user } = useAuth();
+  const permissions = user ? getPermissions(user.role) : null;
+
   return (
     <div className="flex-1 bg-gray-50 overflow-auto">
       <div className="p-6 border-b border-gray-200 bg-white">
@@ -59,10 +64,12 @@ export function TicketsPanel() {
               <Filter className="w-4 h-4" />
               Filtr
             </Button>
-            <Button className="gap-2" data-testid="button-create-ticket">
-              <FileText className="w-4 h-4" />
-              Yangi Buyurtma
-            </Button>
+            {permissions?.canCreateTicket && (
+              <Button className="gap-2" data-testid="button-create-ticket">
+                <FileText className="w-4 h-4" />
+                Yangi Buyurtma
+              </Button>
+            )}
           </div>
         </Card>
 

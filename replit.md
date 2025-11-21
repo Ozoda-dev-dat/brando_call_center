@@ -121,6 +121,22 @@ The system implements fine-grained permissions for each role across all features
 - Operator: username=operator, password=callcenter123
 - Master: username=master, password=MS123
 
+**Implementation Notes**
+
+The role-based access control system is implemented with:
+- Permission utility system in `client/src/lib/permissions.ts` defining all permissions per role
+- Component-level permission checks that hide/disable UI elements based on user role
+- Visual role indicators (badges) showing admin-only sections and view-only modes
+- Fraud alert filtering by role (admin=all, operator=warnings, master=own alerts)
+
+**Production Requirements**
+
+For full production implementation, the following enhancements are needed:
+- Add `masterId` field to user schema to properly link master users to their master records
+- Implement server-side API permission checks to match client-side permissions
+- Add audit logging for permission-sensitive actions (price approval, fraud resolution, honesty score adjustments)
+- Implement proper ticket status workflow restrictions based on role
+
 **Feature-by-Feature Permission Matrix**
 
 | Feature / Screen | ADMIN | OPERATOR | MASTER | Notes |

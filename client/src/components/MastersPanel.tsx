@@ -1,9 +1,11 @@
-import { Search, UserCheck, Phone, Star, TrendingUp, AlertTriangle, Award, Clock } from 'lucide-react';
+import { Search, UserCheck, Phone, Star, TrendingUp, AlertTriangle, Award, Clock, Shield } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { mockMasters } from '@/data/mockData';
+import { useAuth } from '@/hooks/use-auth';
+import { getPermissions } from '@/lib/permissions';
 import type { MasterStatus } from '@shared/crm-schema';
 
 const statusLabels: Record<MasterStatus, string> = {
@@ -21,10 +23,21 @@ const statusColors: Record<MasterStatus, string> = {
 };
 
 export function MastersPanel() {
+  const { user } = useAuth();
+  const permissions = user ? getPermissions(user.role) : null;
+
   return (
     <div className="flex-1 bg-gray-50 overflow-auto">
       <div className="p-6 border-b border-gray-200 bg-white">
-        <h1 className="text-2xl font-semibold text-gray-900">Ustalar</h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-semibold text-gray-900">Ustalar</h1>
+          {user?.role === 'admin' && (
+            <Badge variant="outline" className="border-purple-500 text-purple-700">
+              <Shield className="w-3 h-3 mr-1" />
+              Admin Boshqaruvi
+            </Badge>
+          )}
+        </div>
         <p className="text-sm text-gray-500 mt-1">Usta ishlari va ko'rsatkichlar</p>
       </div>
 
@@ -39,10 +52,12 @@ export function MastersPanel() {
                 data-testid="input-search-masters"
               />
             </div>
-            <Button className="gap-2" data-testid="button-create-master">
-              <UserCheck className="w-4 h-4" />
-              Yangi Usta Qo'shish
-            </Button>
+            {permissions?.canManageMasters && (
+              <Button className="gap-2" data-testid="button-create-master">
+                <UserCheck className="w-4 h-4" />
+                Yangi Usta Qo'shish
+              </Button>
+            )}
           </div>
         </Card>
 
