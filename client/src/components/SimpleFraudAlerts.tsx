@@ -12,11 +12,8 @@ export function SimpleFraudAlerts() {
 
   let filteredAlerts = mockFraudAlerts.filter(a => !a.resolved);
 
-  if (permissions?.canViewOwnFraudAlertsOnly) {
-    // TODO: In production, user object should include masterId field from database
-    // For now, using mock data with fixed master ID for demonstration
-    // Production implementation would use: user.masterId
-    const currentMaster = mockMasters.find(m => m.code === 'MS-042');
+  if (permissions?.canViewOwnFraudAlertsOnly && user?.masterId) {
+    const currentMaster = mockMasters.find(m => m.code === user.masterId);
     if (currentMaster) {
       filteredAlerts = filteredAlerts.filter(a => a.masterId === currentMaster.id);
     } else {

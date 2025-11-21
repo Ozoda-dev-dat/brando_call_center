@@ -65,6 +65,7 @@ export function OperatorPanel() {
             ticketNumber={activeTicket.number}
             customerName={activeTicket.customerName}
             masterName={activeTicket.masterName}
+            readOnly={!permissions?.canAccessOperatorPanel}
           />
         </div>
         

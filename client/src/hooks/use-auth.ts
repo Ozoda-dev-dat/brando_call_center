@@ -5,6 +5,7 @@ interface User {
   username: string;
   fullName: string;
   role: 'admin' | 'operator' | 'master';
+  masterId?: string | null;
 }
 
 interface AuthContextType {

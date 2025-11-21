@@ -21,6 +21,7 @@ interface TicketProgressProps {
   ticketNumber: string;
   customerName: string;
   masterName?: string;
+  readOnly?: boolean;
 }
 
 interface Step {
@@ -54,7 +55,7 @@ function getStepState(stepStatus: TicketStatus, currentStatus: TicketStatus): 'c
   return 'pending';
 }
 
-export function TicketProgress({ currentStatus, ticketNumber, customerName, masterName }: TicketProgressProps) {
+export function TicketProgress({ currentStatus, ticketNumber, customerName, masterName, readOnly = false }: TicketProgressProps) {
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between mb-6">

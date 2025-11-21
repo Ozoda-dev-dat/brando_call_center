@@ -12,6 +12,7 @@ declare module "express-session" {
     userId?: string;
     username?: string;
     role?: 'admin' | 'operator' | 'master';
+    masterId?: string | null;
   }
 }
 
@@ -58,12 +59,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       req.session.userId = user.id;
       req.session.username = user.username;
       req.session.role = user.role;
+      req.session.masterId = user.masterId || null;
 
       return res.json({
         id: user.id,
         username: user.username,
         fullName: user.fullName,
         role: user.role,
+        masterId: user.masterId || null,
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -96,6 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       username: user.username,
       fullName: user.fullName,
       role: user.role,
+      masterId: user.masterId || null,
     });
   });
 

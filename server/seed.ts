@@ -21,6 +21,7 @@ const INITIAL_USERS: InsertUser[] = [
     password: "MS123",
     fullName: "Master",
     role: "master",
+    masterId: "MS-042",
   },
 ];
 
