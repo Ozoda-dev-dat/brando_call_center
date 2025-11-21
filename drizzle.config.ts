@@ -5,5 +5,8 @@ if (!process.env.DATABASE_URL) {
 export default {
   out: "./migrations",
   schema: "./shared/schema.ts",
-  connectionString: process.env.DATABASE_URL,
+  dialect: "postgresql",
+  dbCredentials: {
+    url: process.env.DATABASE_URL,
+  },
 };
