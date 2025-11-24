@@ -8,6 +8,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { getPermissions } from '@/lib/permissions';
 import type { TicketStatus } from '@shared/crm-schema';
 
+
 const statusLabels: Record<TicketStatus, string> = {
   created: 'Yaratildi',
   confirmed: 'Tasdiqlandi',
