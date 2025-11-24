@@ -68,7 +68,6 @@ export function OperatorPanel() {
             readOnly={!permissions?.canAccessOperatorPanel}
           />
         </div>
-        
         <div className="w-80 p-6 border-l border-gray-200 overflow-auto bg-white">
           <MasterAppPreview />
         </div>
