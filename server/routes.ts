@@ -15,7 +15,6 @@ declare module "express-session" {
     masterId?: string | null;
   }
 }
-
 export async function registerRoutes(app: Express): Promise<Server> {
   const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET || 'brando-crm-secret-key-2024',
