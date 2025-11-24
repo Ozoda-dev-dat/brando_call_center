@@ -16,6 +16,7 @@ import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import type { TicketStatus } from '@shared/crm-schema';
 
+
 interface TicketProgressProps {
   currentStatus: TicketStatus;
   ticketNumber: string;
@@ -24,6 +25,7 @@ interface TicketProgressProps {
   readOnly?: boolean;
 }
 
+
 interface Step {
   id: number;
   status: TicketStatus;
@@ -31,6 +33,7 @@ interface Step {
   icon: any;
   description: string;
 }
+
 
 const steps: Step[] = [
   { id: 1, status: 'created', label: 'Yaratildi', icon: Circle, description: 'Buyurtma qabul qilindi' },
