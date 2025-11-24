@@ -45,7 +45,6 @@ export function SimpleFraudAlerts() {
           </div>
         </Card>
       )}
-
       <div className="space-y-3">
         {activeAlerts.map((alert) => {
           return (
