@@ -56,6 +56,7 @@ export function useAuthProvider() {
       body: JSON.stringify({ username, password }),
       credentials: 'include',
     });
+    
 
     if (!response.ok) {
       const error = await response.json();
@@ -66,6 +67,7 @@ export function useAuthProvider() {
     setUser(userData);
   };
 
+  
   const logout = async () => {
     await fetch('/api/auth/logout', {
       method: 'POST',
