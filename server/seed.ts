@@ -10,12 +10,14 @@ const INITIAL_USERS: InsertUser[] = [
     fullName: "Administrator",
     role: "admin",
   },
+  
   {
     username: "operator",
     password: "callcenter123",
     fullName: "Operator",
     role: "operator",
   },
+  
   {
     username: "master",
     password: "MS123",
