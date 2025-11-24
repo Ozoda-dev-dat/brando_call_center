@@ -67,7 +67,7 @@ export function getPermissions(role: UserRole): PermissionCheck {
         canCreateTicket: true,
         canEditCustomer: true,
         canViewAllCustomers: true,
-        canChangeTicketStatus: true, // Limited statuses
+        canChangeTicketStatus: true, 
         canUploadPhotos: false,
         canAddPayment: false,
         canUnblockPayment: false,
@@ -97,9 +97,9 @@ export function getPermissions(role: UserRole): PermissionCheck {
         canCreateTicket: false,
         canEditCustomer: false,
         canViewAllCustomers: false,
-        canChangeTicketStatus: true, // Only own statuses
+        canChangeTicketStatus: true, 
         canUploadPhotos: true,
-        canAddPayment: true, // Only if not under warranty
+        canAddPayment: true, 
         canUnblockPayment: false,
         canCollectSignature: true,
         canViewGPSTracking: true,
@@ -119,7 +119,7 @@ export function getPermissions(role: UserRole): PermissionCheck {
         canEditSMSTemplates: false,
         canAccessOperatorPanel: false,
         canViewOperatorPanel: false,
-        canCheckWarranty: true, // Read-only
+        canCheckWarranty: true, 
         canModifyWarrantyStatus: false,
       };
     default:
