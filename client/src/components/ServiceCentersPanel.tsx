@@ -10,6 +10,7 @@ export function ServiceCentersPanel() {
   const { user } = useAuth();
   const permissions = user ? getPermissions(user.role) : null;
 
+  
   return (
     <div className="flex-1 bg-gray-50 overflow-auto">
       <div className="p-6 border-b border-gray-200 bg-white flex items-center justify-between">
@@ -98,7 +99,6 @@ export function ServiceCentersPanel() {
                   </div>
                 </div>
               </div>
-
               <div className="pt-4 border-t border-gray-200">
                 <p className="text-xs text-gray-500 uppercase tracking-wide mb-2">Qamrov hududlari</p>
                 <div className="flex flex-wrap gap-2">
