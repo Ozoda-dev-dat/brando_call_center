@@ -4,6 +4,10 @@ import { storage } from "./storage";
 import session from "express-session";
 import memorystore from "memorystore";
 import { seedUsers } from "./seed";
+import { WebSocket, WebSocketServer } from "ws";
+import { zadarmaService, type IncomingCallData } from "./zadarma-service";
+import { ticketsService } from "./tickets-service";
+import { telegramService } from "./telegram-service";
 
 const MemoryStore = memorystore(session);
 
@@ -15,6 +19,7 @@ declare module "express-session" {
     masterId?: string | null;
   }
 }
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET || 'brando-crm-secret-key-2024',
@@ -35,6 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   await seedUsers();
 
+  // --- Authentication ---
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
@@ -102,7 +108,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // --- Ticket endpoints ---
+  app.post('/api/tickets', async (req, res) => {
+    try {
+      const payload = req.body;
+      const ticket = ticketsService.createTicket(payload);
+
+      // If master assigned, send via Telegram
+      if (ticket.masterId) {
+        telegramService.sendOrderToMaster(ticket.masterId, ticket);
+      }
+
+      // broadcast to websocket clients
+      broadcast({ type: 'ticket_created', data: ticket });
+
+      return res.json(ticket);
+    } catch (error) {
+      console.error('Error creating ticket', error);
+      return res.status(500).json({ message: 'Error creating ticket' });
+    }
+  });
+
+  app.get('/api/tickets', (req, res) => {
+    return res.json(ticketsService.list());
+  });
+
+  // --- Telegram webhook for callback queries ---
+  app.post('/api/telegram/webhook', async (req, res) => {
+    try {
+      const update = req.body;
+
+      if (update.callback_query) {
+        const cb = update.callback_query;
+        const data: string = cb.data || '';
+        const parts = data.split(':');
+        const action = parts[0];
+        const ticketId = parts[1];
+        const masterId = parts[2];
+
+        if (!ticketId) {
+          await telegramService.answerCallback(cb.id, 'Неверные данные');
+          return res.sendStatus(200);
+        }
+
+        if (action === 'accept') {
+          const updated = ticketsService.updateStatus(ticketId, 'accepted_by_master');
+          await telegramService.answerCallback(cb.id, 'Siz buyurtmani qabul qildingiz');
+          broadcast({ type: 'ticket_updated', data: updated });
+        } else if (action === 'reject') {
+          const updated = ticketsService.updateStatus(ticketId, 'rejected_by_master');
+          await telegramService.answerCallback(cb.id, 'Siz buyurtmani rad etdiniz');
+          broadcast({ type: 'ticket_updated', data: updated });
+        }
+      }
+
+      res.sendStatus(200);
+    } catch (error) {
+      console.error('Error handling telegram webhook', error);
+      res.sendStatus(500);
+    }
+  });
+
+  // --- Twilio incoming call webhook and call management ---
+  // --- Zadarma incoming call webhook and call management ---
+  app.post('/api/calls/incoming', (req, res) => {
+    try {
+        const callData = zadarmaService.handleIncomingCall(req.body);
+      broadcast({ type: 'incoming_call', data: callData });
+
+      res.set('Content-Type', 'text/xml');
+      res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n  <Say>Your call has been received</Say>\n</Response>`);
+    } catch (error) {
+      console.error('Error handling incoming call:', error);
+      res.status(500).json({ message: 'Error processing call' });
+    }
+  });
+
+  app.post('/api/calls/:callSid/accept', (req, res) => {
+    try {
+      const { callSid } = req.params;
+      const { operatorId } = req.body;
+
+      const callData = twilioService.getCallData(callSid);
+      if (callData) {
+        callData.status = 'accepted';
+        callData.operatorId = operatorId;
+      }
+
+      broadcast({ type: 'call_accepted', data: callData });
+
+      return res.json({ message: 'Call accepted', callData });
+    } catch (error) {
+      console.error('Error accepting call:', error);
+      return res.status(500).json({ message: 'Error accepting call' });
+    }
+  });
+
+  app.post('/api/calls/:callSid/reject', async (req, res) => {
+    try {
+      const { callSid } = req.params;
+        await zadarmaService.rejectCall(callSid);
+      broadcast({ type: 'call_rejected', data: { callSid } });
+      return res.json({ message: 'Call rejected' });
+    } catch (error) {
+      console.error('Error rejecting call:', error);
+      return res.status(500).json({ message: 'Error rejecting call' });
+    }
+  });
+
+  app.post('/api/calls/:callSid/end', (req, res) => {
+    try {
+      const { callSid } = req.params;
+      const { duration } = req.body;
+        zadarmaService.endCall(callSid, duration || 0);
+      broadcast({ type: 'call_ended', data: { callSid, duration } });
+      return res.json({ message: 'Call ended' });
+    } catch (error) {
+      console.error('Error ending call:', error);
+      return res.status(500).json({ message: 'Error ending call' });
+    }
+  });
+
   const httpServer = createServer(app);
+
+  // Initialize Twilio service
+    zadarmaService.initialize();
+
+  // WebSocket server and broadcast helper
+  const wss = new WebSocketServer({ server: httpServer });
+  const clients: WebSocket[] = [];
+
+  function broadcast(message: any) {
+    const text = JSON.stringify(message);
+    clients.forEach((c) => {
+      if (c.readyState === WebSocket.OPEN) {
+        try { c.send(text); } catch (e) { console.error('WS send error', e); }
+      }
+    });
+  }
+
+  wss.on('connection', (ws) => {
+    console.log('WS client connected');
+    clients.push(ws);
+
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        if (data && data.type === 'identify' && data.role === 'master' && data.masterId) {
+          // In a fuller implementation we would track by role/masterId
+          ws['masterId'] = data.masterId;
+        }
+      } catch (e) {
+        console.error('Error parsing ws message', e);
+      }
+    });
+
+    ws.on('close', () => {
+      const idx = clients.indexOf(ws);
+      if (idx > -1) clients.splice(idx, 1);
+    });
+
+    ws.on('error', (err) => console.error('WS error', err));
+  });
 
   return httpServer;
 }
