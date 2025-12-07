@@ -231,11 +231,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
-  // Initialize Twilio service
-    zadarmaService.initialize();
-
   // WebSocket server and broadcast helper
-  const wss = new WebSocketServer({ server: httpServer });
+  const wss = new WebSocketServer({ 
+    server: httpServer,
+    path: '/ws'
+  });
   const clients: WebSocket[] = [];
 
   function broadcast(message: any) {
