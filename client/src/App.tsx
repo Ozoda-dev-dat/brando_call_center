@@ -8,7 +8,6 @@ import { AuthContext, useAuthProvider, useAuth } from "@/hooks/use-auth";
 import { Sidebar } from '@/components/Sidebar';
 import { ZadarmaWidget } from '@/components/ZadarmaWidget';
 import LoginPage from '@/pages/login';
-import OperatorPage from '@/pages/operator';
 import TicketsPage from '@/pages/tickets';
 import CustomersPage from '@/pages/customers';
 import ServiceCentersPage from '@/pages/service-centers';
@@ -60,7 +59,7 @@ function Router() {
       <Switch>
         <Route path="/">
           {canAccess(['admin', 'operator']) ? (
-            <OperatorPage />
+            <TicketsPage />
           ) : (
             <Redirect to={getDefaultRoute()} />
           )}
