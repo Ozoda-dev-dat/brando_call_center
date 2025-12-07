@@ -9,6 +9,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { ZadarmaWidget } from '@/components/ZadarmaWidget';
 import LoginPage from '@/pages/login';
 import TicketsPage from '@/pages/tickets';
+import CallsPage from '@/pages/calls';
 import CustomersPage from '@/pages/customers';
 import ServiceCentersPage from '@/pages/service-centers';
 import MastersPage from '@/pages/masters';
@@ -67,6 +68,13 @@ function Router() {
         <Route path="/tickets">
           {canAccess(['admin', 'operator']) ? (
             <TicketsPage />
+          ) : (
+            <Redirect to={getDefaultRoute()} />
+          )}
+        </Route>
+        <Route path="/calls">
+          {canAccess(['admin', 'operator']) ? (
+            <CallsPage />
           ) : (
             <Redirect to={getDefaultRoute()} />
           )}

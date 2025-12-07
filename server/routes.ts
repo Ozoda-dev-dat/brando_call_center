@@ -1,5 +1,5 @@
 import type { Express } from "express";
-import { createServer, type Server } from "http";
+import { createServer, type Server, ServerResponse } from "http";
 import { storage } from "./storage";
 import session from "express-session";
 import memorystore from "memorystore";
@@ -169,7 +169,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // --- Twilio incoming call webhook and call management ---
+  // --- List all calls for admin dashboard ---
+  app.get('/api/calls', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    const calls = zadarmaService.listCalls();
+    return res.json(calls);
+  });
+
   // --- Zadarma incoming call webhook and call management ---
   app.post('/api/calls/incoming', (req, res) => {
     try {
@@ -185,9 +196,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/calls/:callSid/accept', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
     try {
       const { callSid } = req.params;
-      const { operatorId } = req.body;
+      const operatorId = req.session.userId;
 
       const callData = zadarmaService.getCallData(callSid);
       if (callData) {
@@ -205,9 +222,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/calls/:callSid/reject', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
     try {
       const { callSid } = req.params;
-        await zadarmaService.rejectCall(callSid);
+      await zadarmaService.rejectCall(callSid);
       broadcast({ type: 'call_rejected', data: { callSid } });
       return res.json({ message: 'Call rejected' });
     } catch (error) {
@@ -217,15 +240,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/calls/:callSid/end', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
     try {
       const { callSid } = req.params;
       const { duration } = req.body;
-        zadarmaService.endCall(callSid, duration || 0);
+      zadarmaService.endCall(callSid, duration || 0);
       broadcast({ type: 'call_ended', data: { callSid, duration } });
       return res.json({ message: 'Call ended' });
     } catch (error) {
       console.error('Error ending call:', error);
       return res.status(500).json({ message: 'Error ending call' });
+    }
+  });
+
+  app.post('/api/calls/outgoing', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    try {
+      const { phoneNumber } = req.body;
+      const callData = zadarmaService.recordOutgoingCall(phoneNumber, req.session.userId);
+      broadcast({ type: 'outgoing_call', data: callData });
+      return res.json({ message: 'Outgoing call recorded', callData });
+    } catch (error) {
+      console.error('Error recording outgoing call:', error);
+      return res.status(500).json({ message: 'Error recording call' });
     }
   });
 
@@ -256,12 +303,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   const httpServer = createServer(app);
 
-  // WebSocket server and broadcast helper
+  // WebSocket server with session authentication
   const wss = new WebSocketServer({ 
-    server: httpServer,
-    path: '/ws'
+    noServer: true
   });
-  const clients: WebSocket[] = [];
+  
+  interface AuthenticatedWebSocket extends WebSocket {
+    userId?: string;
+    role?: string;
+    masterId?: string;
+  }
+  
+  const clients: AuthenticatedWebSocket[] = [];
 
   function broadcast(message: any) {
     const text = JSON.stringify(message);
@@ -272,16 +325,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   }
 
-  wss.on('connection', (ws) => {
-    console.log('WS client connected');
+  httpServer.on('upgrade', (request, socket, head) => {
+    if (request.url !== '/ws') {
+      socket.destroy();
+      return;
+    }
+
+    const mockRes = Object.create(ServerResponse.prototype);
+    mockRes.writeHead = () => mockRes;
+    mockRes.end = () => mockRes;
+    
+    sessionMiddleware(request as any, mockRes, () => {
+      const session = (request as any).session;
+      
+      if (!session?.userId) {
+        console.log('WebSocket connection rejected: No authenticated session');
+        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
+      if (session.role !== 'admin' && session.role !== 'operator') {
+        console.log(`WebSocket connection rejected: Unauthorized role (${session.role})`);
+        socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
+        socket.destroy();
+        return;
+      }
+
+      wss.handleUpgrade(request, socket, head, (ws) => {
+        const authWs = ws as AuthenticatedWebSocket;
+        authWs.userId = session.userId;
+        authWs.role = session.role;
+        authWs.masterId = session.masterId;
+        wss.emit('connection', authWs, request);
+      });
+    });
+  });
+
+  wss.on('connection', (ws: AuthenticatedWebSocket) => {
+    console.log(`WS client connected: user=${ws.userId}, role=${ws.role}`);
     clients.push(ws);
 
     ws.on('message', (message) => {
       try {
         const data = JSON.parse(message.toString());
         if (data && data.type === 'identify' && data.role === 'master' && data.masterId) {
-          // In a fuller implementation we would track by role/masterId
-          (ws as any).masterId = data.masterId;
+          ws.masterId = data.masterId;
         }
       } catch (e) {
         console.error('Error parsing ws message', e);

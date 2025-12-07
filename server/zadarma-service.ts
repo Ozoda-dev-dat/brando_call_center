@@ -1,14 +1,17 @@
 import crypto from 'crypto';
 
-export interface IncomingCallData {
+export interface CallData {
   callId: string;
   from: string;
   to: string;
   timestamp: Date;
   operatorId?: string;
-  status: 'incoming' | 'accepted' | 'rejected' | 'ended';
+  status: 'incoming' | 'outgoing' | 'accepted' | 'rejected' | 'ended' | 'missed';
   duration?: number;
+  direction: 'incoming' | 'outgoing';
 }
+
+export type IncomingCallData = CallData;
 
 export interface WebRTCKeyResponse {
   key: string;
@@ -120,17 +123,18 @@ class ZadarmaService {
    * Handle incoming call webhook from Zadarma
    * event=inbound_call, caller=+998..., to=12345 (your PBX number), etc.
    */
-  handleIncomingCall(params: Record<string, string>): IncomingCallData | null {
+  handleIncomingCall(params: Record<string, string>): CallData | null {
     const callId = params.call_id || `call_${Date.now()}`;
     const from = params.caller || 'Unknown';
     const to = params.to || '';
 
-    const callData: IncomingCallData = {
+    const callData: CallData = {
       callId,
       from,
       to,
       timestamp: new Date(),
       status: 'incoming',
+      direction: 'incoming',
     };
 
     this.incomingCalls.set(callId, callData);
@@ -170,10 +174,32 @@ class ZadarmaService {
   }
 
   /**
+   * Record an outgoing call initiated by an operator
+   */
+  recordOutgoingCall(phoneNumber: string, operatorId: string): CallData {
+    const callId = `out_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const callData: CallData = {
+      callId,
+      from: operatorId,
+      to: phoneNumber,
+      timestamp: new Date(),
+      operatorId,
+      status: 'outgoing',
+      direction: 'outgoing',
+    };
+
+    this.incomingCalls.set(callId, callData);
+    return callData;
+  }
+
+  /**
    * Get list of all active/recent calls for admin dashboard
    */
-  listCalls(): IncomingCallData[] {
-    return Array.from(this.incomingCalls.values());
+  listCalls(): CallData[] {
+    return Array.from(this.incomingCalls.values()).sort((a, b) => 
+      new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    );
   }
 }
 

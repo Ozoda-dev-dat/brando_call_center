@@ -1,4 +1,4 @@
-import { FileText, Users, MapPin, UserCheck, LayoutDashboard, Settings, FileBarChart, LogOut } from 'lucide-react';
+import { FileText, Users, MapPin, UserCheck, LayoutDashboard, Settings, FileBarChart, LogOut, Phone } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '@/hooks/use-auth';
@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 
 const menuItems = [
   { id: 'tickets', label: 'Buyurtmalar', icon: FileText, path: '/', roles: ['admin', 'operator'] },
+  { id: 'calls', label: "Qo'ng'iroqlar", icon: Phone, path: '/calls', roles: ['admin', 'operator'] },
   { id: 'customers', label: 'Mijozlar', icon: Users, path: '/customers', roles: ['admin', 'operator'] },
   { id: 'service-centers', label: 'Xizmat Markazlari', icon: MapPin, path: '/service-centers', roles: ['admin', 'operator'] },
   { id: 'masters', label: 'Ustalar', icon: UserCheck, path: '/masters', roles: ['admin', 'operator', 'master'] },
