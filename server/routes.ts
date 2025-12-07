@@ -189,7 +189,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { callSid } = req.params;
       const { operatorId } = req.body;
 
-      const callData = twilioService.getCallData(callSid);
+      const callData = zadarmaService.getCallData(callSid);
       if (callData) {
         callData.status = 'accepted';
         callData.operatorId = operatorId;
@@ -229,6 +229,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/zadarma/widget-config', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+
+    const key = process.env.ZADARMA_WEBRTC_KEY;
+    const sip = process.env.ZADARMA_SIP;
+
+    if (!key || !sip) {
+      return res.status(404).json({ message: 'Zadarma widget not configured' });
+    }
+
+    return res.json({ key, sip });
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server and broadcast helper
@@ -256,7 +271,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const data = JSON.parse(message.toString());
         if (data && data.type === 'identify' && data.role === 'master' && data.masterId) {
           // In a fuller implementation we would track by role/masterId
-          ws['masterId'] = data.masterId;
+          (ws as any).masterId = data.masterId;
         }
       } catch (e) {
         console.error('Error parsing ws message', e);
