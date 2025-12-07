@@ -10,14 +10,82 @@ export interface IncomingCallData {
   duration?: number;
 }
 
+export interface WebRTCKeyResponse {
+  key: string;
+  sip: string;
+}
+
 class ZadarmaService {
   private apiKey: string;
-  private secretKey: string;
+  private apiSecret: string;
   private incomingCalls: Map<string, IncomingCallData> = new Map();
 
   constructor() {
     this.apiKey = process.env.ZADARMA_API_KEY || '';
-    this.secretKey = process.env.ZADARMA_SECRET_KEY || '';
+    this.apiSecret = process.env.ZADARMA_API_SECRET || '';
+  }
+
+  /**
+   * Generate Zadarma API signature for authenticated requests
+   */
+  private generateApiSignature(method: string, params: Record<string, string> = {}): string {
+    const sortedParams = Object.keys(params)
+      .sort()
+      .map(key => `${key}=${params[key]}`)
+      .join('&');
+
+    const signatureString = method + sortedParams + crypto
+      .createHash('md5')
+      .update(sortedParams)
+      .digest('hex');
+
+    return crypto
+      .createHmac('sha1', this.apiSecret)
+      .update(signatureString)
+      .digest('base64');
+  }
+
+  /**
+   * Get dynamic WebRTC key from Zadarma API
+   * Must be called on each page load as per Zadarma's requirements
+   */
+  async getWebRTCKey(sipExtension: string): Promise<WebRTCKeyResponse | null> {
+    if (!this.apiKey || !this.apiSecret) {
+      console.error('Zadarma API credentials not configured');
+      return null;
+    }
+
+    try {
+      const method = '/v1/webrtc/get_key/';
+      const params = { sip: sipExtension };
+      const signature = this.generateApiSignature(method, params);
+
+      const queryString = Object.keys(params)
+        .map(key => `${key}=${encodeURIComponent(params[key as keyof typeof params])}`)
+        .join('&');
+
+      const response = await fetch(`https://api.zadarma.com${method}?${queryString}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `${this.apiKey}:${signature}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success' && data.key) {
+        return {
+          key: data.key,
+          sip: sipExtension,
+        };
+      } else {
+        console.error('Zadarma API error:', data);
+        return null;
+      }
+    } catch (error) {
+      console.error('Failed to get WebRTC key from Zadarma:', error);
+      return null;
+    }
   }
 
   /**
@@ -25,8 +93,8 @@ class ZadarmaService {
    * Zadarma sends: callback_url?event=inbound_call&...&signature=HMAC-MD5
    */
   verifySignature(params: Record<string, string>, signature: string): boolean {
-    if (!this.secretKey) {
-      console.warn('ZADARMA_SECRET_KEY not configured, skipping signature verification');
+    if (!this.apiSecret) {
+      console.warn('ZADARMA_API_SECRET not configured, skipping signature verification');
       return true;
     }
 
@@ -41,7 +109,7 @@ class ZadarmaService {
 
     // Compute HMAC-MD5
     const computed = crypto
-      .createHmac('md5', this.secretKey)
+      .createHmac('md5', this.apiSecret)
       .update(queryString)
       .digest('hex');
 

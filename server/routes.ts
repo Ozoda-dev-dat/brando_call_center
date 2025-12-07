@@ -229,19 +229,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/zadarma/widget-config', (req, res) => {
+  app.get('/api/zadarma/widget-config', async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'Authentication required' });
     }
 
-    const key = process.env.ZADARMA_WEBRTC_KEY;
     const sip = process.env.ZADARMA_SIP;
 
-    if (!key || !sip) {
-      return res.status(404).json({ message: 'Zadarma widget not configured' });
+    if (!sip) {
+      return res.status(404).json({ message: 'Zadarma SIP not configured' });
     }
 
-    return res.json({ key, sip });
+    try {
+      const webrtcConfig = await zadarmaService.getWebRTCKey(sip);
+      
+      if (!webrtcConfig) {
+        return res.status(500).json({ message: 'Failed to get WebRTC key from Zadarma' });
+      }
+
+      return res.json({ key: webrtcConfig.key, sip: webrtcConfig.sip });
+    } catch (error) {
+      console.error('Error getting Zadarma WebRTC config:', error);
+      return res.status(500).json({ message: 'Error getting WebRTC configuration' });
+    }
   });
 
   const httpServer = createServer(app);
