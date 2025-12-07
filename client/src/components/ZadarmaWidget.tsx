@@ -36,7 +36,7 @@ export function ZadarmaWidget() {
           window.zadarmaWidgetFn(
             config.key,
             config.sip,
-            'rectangular' as any,
+            'square',
             'en',
             true,
             { right: '10px', bottom: '5px' }
