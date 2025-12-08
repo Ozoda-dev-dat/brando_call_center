@@ -110,16 +110,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // --- Ticket endpoints ---
   app.post('/api/tickets', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
     try {
       const payload = req.body;
-      const ticket = ticketsService.createTicket(payload);
+      const ticket = await ticketsService.createTicket(payload);
 
-      // If master assigned, send via Telegram
       if (ticket.masterId) {
         telegramService.sendOrderToMaster(ticket.masterId, ticket);
       }
 
-      // broadcast to websocket clients
       broadcast({ type: 'ticket_created', data: ticket });
 
       return res.json(ticket);
@@ -129,8 +130,85 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/tickets', (req, res) => {
-    return res.json(ticketsService.list());
+  app.get('/api/tickets', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const tickets = await ticketsService.list();
+      return res.json(tickets);
+    } catch (error) {
+      console.error('Error listing tickets', error);
+      return res.status(500).json({ message: 'Error listing tickets' });
+    }
+  });
+
+  app.get('/api/tickets/:id', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const ticket = await ticketsService.getTicket(req.params.id);
+      if (!ticket) {
+        return res.status(404).json({ message: 'Ticket not found' });
+      }
+      return res.json(ticket);
+    } catch (error) {
+      console.error('Error getting ticket', error);
+      return res.status(500).json({ message: 'Error getting ticket' });
+    }
+  });
+
+  app.patch('/api/tickets/:id', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const ticket = await ticketsService.updateTicket(req.params.id, req.body);
+      if (!ticket) {
+        return res.status(404).json({ message: 'Ticket not found' });
+      }
+      broadcast({ type: 'ticket_updated', data: ticket });
+      return res.json(ticket);
+    } catch (error) {
+      console.error('Error updating ticket', error);
+      return res.status(500).json({ message: 'Error updating ticket' });
+    }
+  });
+
+  app.patch('/api/tickets/:id/status', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const { status } = req.body;
+      const ticket = await ticketsService.updateStatus(req.params.id, status);
+      if (!ticket) {
+        return res.status(404).json({ message: 'Ticket not found' });
+      }
+      broadcast({ type: 'ticket_updated', data: ticket });
+      return res.json(ticket);
+    } catch (error) {
+      console.error('Error updating ticket status', error);
+      return res.status(500).json({ message: 'Error updating ticket status' });
+    }
+  });
+
+  app.delete('/api/tickets/:id', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admin can delete tickets' });
+    }
+    try {
+      await ticketsService.delete(req.params.id);
+      broadcast({ type: 'ticket_deleted', data: { id: req.params.id } });
+      return res.json({ message: 'Ticket deleted' });
+    } catch (error) {
+      console.error('Error deleting ticket', error);
+      return res.status(500).json({ message: 'Error deleting ticket' });
+    }
   });
 
   // --- Telegram webhook for callback queries ---
@@ -152,11 +230,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
 
         if (action === 'accept') {
-          const updated = ticketsService.updateStatus(ticketId, 'accepted_by_master');
+          const updated = await ticketsService.updateStatus(ticketId, 'in_progress');
           await telegramService.answerCallback(cb.id, 'Siz buyurtmani qabul qildingiz');
           broadcast({ type: 'ticket_updated', data: updated });
         } else if (action === 'reject') {
-          const updated = ticketsService.updateStatus(ticketId, 'rejected_by_master');
+          const updated = await ticketsService.updateStatus(ticketId, 'created');
           await telegramService.answerCallback(cb.id, 'Siz buyurtmani rad etdiniz');
           broadcast({ type: 'ticket_updated', data: updated });
         }

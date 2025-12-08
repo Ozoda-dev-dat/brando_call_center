@@ -1,13 +1,34 @@
-import { Search, Filter, FileText, Clock, CheckCircle2, AlertCircle, AlertTriangle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Filter, FileText, Clock, CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { mockTickets } from '@/data/mockData';
 import { useAuth } from '@/hooks/use-auth';
 import { getPermissions } from '@/lib/permissions';
 import type { TicketStatus } from '@shared/crm-schema';
 
+interface Ticket {
+  id: string;
+  number: string;
+  customerId?: string | null;
+  customerName: string;
+  customerPhone: string;
+  customerAddress?: string | null;
+  deviceType?: string | null;
+  deviceModel?: string | null;
+  issueDescription?: string | null;
+  status: TicketStatus;
+  masterId?: string | null;
+  masterName?: string | null;
+  createdAt: string;
+  scheduledTime?: string | null;
+  completedAt?: string | null;
+  warrantyStatus?: 'in_warranty' | 'out_of_warranty' | null;
+  estimatedCost?: number | null;
+  actualCost?: number | null;
+  distance?: number | null;
+}
 
 const statusLabels: Record<TicketStatus, string> = {
   created: 'Yaratildi',
@@ -42,6 +63,53 @@ const statusColors: Record<string, string> = {
 export function TicketsPanel() {
   const { user } = useAuth();
   const permissions = user ? getPermissions(user.role) : null;
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
+  const fetchTickets = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch('/api/tickets', {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch tickets');
+      }
+      
+      const data = await response.json();
+      setTickets(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error loading tickets');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredTickets = tickets.filter(ticket => {
+    if (!searchTerm) return true;
+    const search = searchTerm.toLowerCase();
+    return (
+      ticket.number.toLowerCase().includes(search) ||
+      ticket.customerName.toLowerCase().includes(search) ||
+      ticket.customerPhone.includes(search)
+    );
+  });
+
+  if (loading) {
+    return (
+      <div className="flex-1 bg-gray-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 bg-gray-50 overflow-auto">
@@ -58,6 +126,8 @@ export function TicketsPanel() {
               <Input
                 placeholder="Buyurtma raqami, mijoz ismi yoki telefon bo'yicha qidirish..."
                 className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 data-testid="input-search-tickets"
               />
             </div>
@@ -74,8 +144,27 @@ export function TicketsPanel() {
           </div>
         </Card>
 
+        {error && (
+          <Card className="p-4 mb-6 bg-red-50 border-red-200">
+            <p className="text-red-700">{error}</p>
+            <Button onClick={fetchTickets} variant="outline" className="mt-2">
+              Qayta urinish
+            </Button>
+          </Card>
+        )}
+
+        {filteredTickets.length === 0 && !error && (
+          <Card className="p-8 text-center">
+            <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Buyurtmalar topilmadi</h3>
+            <p className="text-gray-500">
+              {searchTerm ? 'Qidiruv bo\'yicha natija topilmadi' : 'Hali buyurtmalar mavjud emas'}
+            </p>
+          </Card>
+        )}
+
         <div className="grid gap-4">
-          {mockTickets.map((ticket) => {
+          {filteredTickets.map((ticket) => {
             const isFraudTrigger = ticket.status === 'payment_blocked' || (ticket.estimatedCost && ticket.estimatedCost > 500000);
             return (
             <Card 
@@ -88,8 +177,8 @@ export function TicketsPanel() {
                   <div className="flex items-center gap-3 mb-2">
                     {isFraudTrigger && <AlertTriangle className="w-5 h-5 text-red-600" data-testid={`fraud-icon-${ticket.id}`} />}
                     <h3 className="text-lg font-semibold text-gray-900">{ticket.number}</h3>
-                    <Badge className={statusColors[ticket.status]} data-testid={`badge-status-${ticket.id}`}>
-                      {statusLabels[ticket.status]}
+                    <Badge className={statusColors[ticket.status] || 'bg-gray-100 text-gray-700'} data-testid={`badge-status-${ticket.id}`}>
+                      {statusLabels[ticket.status] || ticket.status}
                     </Badge>
                     {ticket.warrantyStatus === 'in_warranty' && (
                       <Badge variant="outline" className="border-blue-500 text-blue-700">
@@ -107,21 +196,23 @@ export function TicketsPanel() {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Qurilma</p>
-                  <p className="text-sm font-medium text-gray-900" data-testid={`device-type-${ticket.id}`}>{ticket.deviceType}</p>
+                  <p className="text-sm font-medium text-gray-900" data-testid={`device-type-${ticket.id}`}>{ticket.deviceType || '-'}</p>
                   {ticket.deviceModel && (
                     <p className="text-sm text-gray-600">{ticket.deviceModel}</p>
                   )}
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Manzil</p>
-                  <p className="text-sm text-gray-900">{ticket.customerAddress}</p>
+                  <p className="text-sm text-gray-900">{ticket.customerAddress || '-'}</p>
                 </div>
               </div>
 
-              <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Muammo</p>
-                <p className="text-sm text-gray-700">{ticket.issueDescription}</p>
-              </div>
+              {ticket.issueDescription && (
+                <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Muammo</p>
+                  <p className="text-sm text-gray-700">{ticket.issueDescription}</p>
+                </div>
+              )}
 
               {ticket.masterName && (
                 <div className="flex items-center gap-2 text-sm">
