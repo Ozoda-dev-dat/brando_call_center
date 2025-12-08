@@ -8,15 +8,18 @@ import { useAuth } from '@/hooks/use-auth';
 import { getPermissions } from '@/lib/permissions';
 import type { TicketStatus } from '@shared/crm-schema';
 
+// MA'LUMOTLAR BAZASIDAGI NOMLARGA MOSLANGAN INTERFEYS
 interface Ticket {
   id: string;
   number: string;
   customerId?: string | null;
-  customerName: string;
-  customerPhone: string;
-  customerAddress?: string | null;
-  deviceType?: string | null;
-  deviceModel?: string | null;
+  clientName: string; // DB: client_name
+  clientPhone: string; // DB: client_phone
+  address?: string | null; // DB: address
+  lat?: number | null;
+  lng?: number | null;
+  product?: string | null; // DB: product
+  quantity?: number | null; // DB: quantity (deviceModel o'rniga)
   issueDescription?: string | null;
   status: TicketStatus;
   masterId?: string | null;
@@ -98,8 +101,8 @@ export function TicketsPanel() {
     const search = searchTerm.toLowerCase();
     return (
       ticket.number.toLowerCase().includes(search) ||
-      ticket.customerName.toLowerCase().includes(search) ||
-      ticket.customerPhone.includes(search)
+      ticket.clientName.toLowerCase().includes(search) || // clientName ga o'zgartirildi
+      ticket.clientPhone.includes(search) // clientPhone ga o'zgartirildi
     );
   });
 
@@ -186,7 +189,8 @@ export function TicketsPanel() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-gray-600">{ticket.customerName} • {ticket.customerPhone}</p>
+                  {/* clientName va clientPhone ga o'zgartirildi */}
+                  <p className="text-sm text-gray-600">{ticket.clientName} • {ticket.clientPhone}</p> 
                 </div>
                 <p className="text-sm text-gray-500">
                   {new Date(ticket.createdAt).toLocaleDateString('uz-UZ')} {new Date(ticket.createdAt).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
@@ -196,14 +200,17 @@ export function TicketsPanel() {
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Qurilma</p>
-                  <p className="text-sm font-medium text-gray-900" data-testid={`device-type-${ticket.id}`}>{ticket.deviceType || '-'}</p>
-                  {ticket.deviceModel && (
-                    <p className="text-sm text-gray-600">{ticket.deviceModel}</p>
+                  {/* product ga o'zgartirildi */}
+                  <p className="text-sm font-medium text-gray-900" data-testid={`device-type-${ticket.id}`}>{ticket.product || '-'}</p> 
+                  {/* quantity ga o'zgartirildi */}
+                  {ticket.quantity && (
+                    <p className="text-sm text-gray-600">Soni: {ticket.quantity}</p>
                   )}
                 </div>
                 <div>
                   <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Manzil</p>
-                  <p className="text-sm text-gray-900">{ticket.customerAddress || '-'}</p>
+                  {/* address ga o'zgartirildi */}
+                  <p className="text-sm text-gray-900">{ticket.address || '-'}</p> 
                 </div>
               </div>
 
@@ -213,7 +220,8 @@ export function TicketsPanel() {
                   <p className="text-sm text-gray-700">{ticket.issueDescription}</p>
                 </div>
               )}
-
+                
+              {/* ... (Qolgan kod o'zgarishsiz qoladi) */}
               {ticket.masterName && (
                 <div className="flex items-center gap-2 text-sm">
                   <CheckCircle2 className="w-4 h-4 text-blue-600" />
@@ -259,7 +267,7 @@ export function TicketsPanel() {
               )}
             </Card>
           );
-        })}
+          })}
         </div>
       </div>
     </div>
