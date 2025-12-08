@@ -139,6 +139,12 @@ For incoming calls to work, configure a webhook in Zadarma PBX settings:
 - Events: `notify_start`, `notify_end`, `notify_internal`
 
 ## Recent Changes
+- December 8, 2024: Implemented database-backed tickets/orders system
+  - Created comprehensive tickets table with customer info, device details, status tracking, and fraud detection fields
+  - Updated tickets-service.ts to use PostgreSQL via Drizzle ORM instead of in-memory storage
+  - Updated TicketsPanel to fetch real data from /api/tickets endpoint using React Query
+  - Tested and verified CRUD operations work correctly with the database
+
 - December 8, 2024: Fixed Zadarma integration for real-time calls
   - Fixed environment variable name mismatch (ZADARMA_SECRET_KEY)
   - Implemented real outgoing call initiation via Zadarma callback API
