@@ -1,7 +1,7 @@
 import { storage } from "./storage";
 import type { Order, InsertOrder } from "@shared/schema";
 
-export type OrderStatus = 'new' | 'assigned' | 'on_the_way' | 'arrived' | 'in_progress' | 'completed' | 'cancelled';
+export type OrderStatus = 'new' | 'assigned' | 'on_way' | 'arrived' | 'in_progress' | 'completed' | 'delivered' | 'cancelled';
 
 class OrdersService {
   async createOrder(orderData: Partial<InsertOrder>): Promise<Order> {
