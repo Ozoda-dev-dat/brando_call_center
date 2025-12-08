@@ -110,25 +110,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  // --- Ticket endpoints ---
+  // --- Ticket/Order endpoints ---
   app.post('/api/tickets', async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'Authentication required' });
     }
     try {
       const payload = req.body;
-      const ticket = await ticketsService.createTicket(payload);
+      const order = await ticketsService.createOrder(payload);
 
-      if (ticket.masterId) {
-        telegramService.sendOrderToMaster(ticket.masterId, ticket);
+      if (order.masterId) {
+        telegramService.sendOrderToMaster(String(order.masterId), order);
       }
 
-      broadcast({ type: 'ticket_created', data: ticket });
+      broadcast({ type: 'ticket_created', data: order });
 
-      return res.json(ticket);
+      return res.json(order);
     } catch (error) {
-      console.error('Error creating ticket', error);
-      return res.status(500).json({ message: 'Error creating ticket' });
+      console.error('Error creating order', error);
+      return res.status(500).json({ message: 'Error creating order' });
     }
   });
 
@@ -150,14 +150,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ message: 'Authentication required' });
     }
     try {
-      const ticket = await ticketsService.getTicket(req.params.id);
-      if (!ticket) {
-        return res.status(404).json({ message: 'Ticket not found' });
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
       }
-      return res.json(ticket);
+      const order = await ticketsService.getOrder(id);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      return res.json(order);
     } catch (error) {
-      console.error('Error getting ticket', error);
-      return res.status(500).json({ message: 'Error getting ticket' });
+      console.error('Error getting order', error);
+      return res.status(500).json({ message: 'Error getting order' });
     }
   });
 
@@ -166,15 +170,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ message: 'Authentication required' });
     }
     try {
-      const ticket = await ticketsService.updateTicket(req.params.id, req.body);
-      if (!ticket) {
-        return res.status(404).json({ message: 'Ticket not found' });
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
       }
-      broadcast({ type: 'ticket_updated', data: ticket });
-      return res.json(ticket);
+      const order = await ticketsService.updateOrder(id, req.body);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      broadcast({ type: 'ticket_updated', data: order });
+      return res.json(order);
     } catch (error) {
-      console.error('Error updating ticket', error);
-      return res.status(500).json({ message: 'Error updating ticket' });
+      console.error('Error updating order', error);
+      return res.status(500).json({ message: 'Error updating order' });
     }
   });
 
@@ -183,16 +191,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ message: 'Authentication required' });
     }
     try {
-      const { status } = req.body;
-      const ticket = await ticketsService.updateStatus(req.params.id, status);
-      if (!ticket) {
-        return res.status(404).json({ message: 'Ticket not found' });
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
       }
-      broadcast({ type: 'ticket_updated', data: ticket });
-      return res.json(ticket);
+      const { status } = req.body;
+      const order = await ticketsService.updateStatus(id, status);
+      if (!order) {
+        return res.status(404).json({ message: 'Order not found' });
+      }
+      broadcast({ type: 'ticket_updated', data: order });
+      return res.json(order);
     } catch (error) {
-      console.error('Error updating ticket status', error);
-      return res.status(500).json({ message: 'Error updating ticket status' });
+      console.error('Error updating order status', error);
+      return res.status(500).json({ message: 'Error updating order status' });
     }
   });
 
@@ -201,15 +213,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(401).json({ message: 'Authentication required' });
     }
     if (req.session.role !== 'admin') {
-      return res.status(403).json({ message: 'Only admin can delete tickets' });
+      return res.status(403).json({ message: 'Only admin can delete orders' });
     }
     try {
-      await ticketsService.delete(req.params.id);
-      broadcast({ type: 'ticket_deleted', data: { id: req.params.id } });
-      return res.json({ message: 'Ticket deleted' });
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      await ticketsService.delete(id);
+      broadcast({ type: 'ticket_deleted', data: { id } });
+      return res.json({ message: 'Order deleted' });
     } catch (error) {
-      console.error('Error deleting ticket', error);
-      return res.status(500).json({ message: 'Error deleting ticket' });
+      console.error('Error deleting order', error);
+      return res.status(500).json({ message: 'Error deleting order' });
     }
   });
 
@@ -231,12 +247,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.sendStatus(200);
         }
 
+        const orderId = parseInt(ticketId, 10);
+        if (isNaN(orderId)) {
+          await telegramService.answerCallback(cb.id, 'Неверный ID');
+          return res.sendStatus(200);
+        }
+
         if (action === 'accept') {
-          const updated = await ticketsService.updateStatus(ticketId, 'in_progress');
+          const updated = await ticketsService.updateStatus(orderId, 'in_progress');
           await telegramService.answerCallback(cb.id, 'Siz buyurtmani qabul qildingiz');
           broadcast({ type: 'ticket_updated', data: updated });
         } else if (action === 'reject') {
-          const updated = await ticketsService.updateStatus(ticketId, 'created');
+          const updated = await ticketsService.updateStatus(orderId, 'new');
           await telegramService.answerCallback(cb.id, 'Siz buyurtmani rad etdiniz');
           broadcast({ type: 'ticket_updated', data: updated });
         }

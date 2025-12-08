@@ -86,6 +86,13 @@ npm run check    # Type check TypeScript
 - Telegram integration for notifications
 
 ## Recent Changes
+- 2024-12-08: Updated schema to match existing Render database
+  - Changed from `tickets` table to `orders` table to match existing database structure
+  - Updated all column names to match existing database (client_name, client_phone, address, etc.)
+  - Changed ID type from varchar/UUID to serial (auto-increment integer)
+  - Added `masters` table schema for foreign key support
+  - Updated storage, services, and routes to use numeric IDs
+
 - 2024-12-08: Fixed session/authentication issues for proxy environments
   - Added `trust proxy` setting to Express for proper cookie handling behind reverse proxies
   - Fixed session cookie sameSite setting to 'lax' for CSRF protection

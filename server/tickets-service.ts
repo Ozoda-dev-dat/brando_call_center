@@ -1,59 +1,47 @@
 import { storage } from "./storage";
-import type { Ticket, InsertTicket } from "@shared/schema";
+import type { Order, InsertOrder } from "@shared/schema";
 
-export type TicketStatus = 'created' | 'confirmed' | 'master_assigned' | 'on_the_way' | 'arrived' | 'in_progress' | 'photos_taken' | 'payment_pending' | 'payment_blocked' | 'completed' | 'control_call' | 'closed';
+export type OrderStatus = 'new' | 'assigned' | 'on_the_way' | 'arrived' | 'in_progress' | 'completed' | 'cancelled';
 
-class TicketsService {
-  private generateTicketNumber(): string {
-    const year = new Date().getFullYear();
-    const random = Math.floor(1000 + Math.random() * 9000);
-    return `TK-${year}-${random}`;
-  }
-
-  async createTicket(ticketData: Partial<InsertTicket>): Promise<Ticket> {
-    const number = ticketData.number || this.generateTicketNumber();
-    
-    const newTicket: InsertTicket = {
-      number,
-      customerName: ticketData.customerName || 'Unknown',
-      customerPhone: ticketData.customerPhone || '',
-      customerAddress: ticketData.customerAddress,
-      customerId: ticketData.customerId,
-      deviceType: ticketData.deviceType,
-      deviceModel: ticketData.deviceModel,
-      issueDescription: ticketData.issueDescription,
-      masterId: ticketData.masterId,
-      masterName: ticketData.masterName,
-      status: ticketData.status || 'created',
-      scheduledTime: ticketData.scheduledTime,
-      warrantyStatus: ticketData.warrantyStatus || 'out_of_warranty',
-      estimatedCost: ticketData.estimatedCost,
-      distance: ticketData.distance,
-      gpsLocation: ticketData.gpsLocation,
+class OrdersService {
+  async createOrder(orderData: Partial<InsertOrder>): Promise<Order> {
+    const newOrder: InsertOrder = {
+      clientName: orderData.clientName || null,
+      clientPhone: orderData.clientPhone || null,
+      address: orderData.address || null,
+      lat: orderData.lat || null,
+      lng: orderData.lng || null,
+      product: orderData.product || null,
+      quantity: orderData.quantity || null,
+      masterId: orderData.masterId || null,
+      status: orderData.status || 'new',
+      warrantyExpired: orderData.warrantyExpired || null,
+      barcode: orderData.barcode || null,
     };
 
-    return await storage.createTicket(newTicket);
+    return await storage.createOrder(newOrder);
   }
 
-  async getTicket(id: string): Promise<Ticket | undefined> {
-    return await storage.getTicket(id);
+  async getOrder(id: number): Promise<Order | undefined> {
+    return await storage.getOrder(id);
   }
 
-  async updateStatus(id: string, status: TicketStatus): Promise<Ticket | undefined> {
-    return await storage.updateTicketStatus(id, status);
+  async updateStatus(id: number, status: string): Promise<Order | undefined> {
+    return await storage.updateOrderStatus(id, status);
   }
 
-  async updateTicket(id: string, updates: Partial<InsertTicket>): Promise<Ticket | undefined> {
-    return await storage.updateTicket(id, updates);
+  async updateOrder(id: number, updates: Partial<InsertOrder>): Promise<Order | undefined> {
+    return await storage.updateOrder(id, updates);
   }
 
-  async list(): Promise<Ticket[]> {
-    return await storage.listTickets();
+  async list(): Promise<Order[]> {
+    return await storage.listOrders();
   }
 
-  async delete(id: string): Promise<void> {
-    return await storage.deleteTicket(id);
+  async delete(id: number): Promise<void> {
+    return await storage.deleteOrder(id);
   }
 }
 
-export const ticketsService = new TicketsService();
+export const ticketsService = new OrdersService();
+export const ordersService = ticketsService;
