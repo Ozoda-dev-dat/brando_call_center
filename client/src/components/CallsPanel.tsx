@@ -98,7 +98,9 @@ export function CallsPanel() {
   const { data: callHistory = [], refetch: refetchCalls } = useQuery<CallRecord[]>({
     queryKey: ['/api/calls'],
     queryFn: async () => {
-      const response = await fetch('/api/calls');
+      const response = await fetch('/api/calls', {
+        credentials: 'include',
+      });
       if (!response.ok) {
         throw new Error('Failed to fetch calls');
       }
@@ -163,7 +165,8 @@ export function CallsPanel() {
       const response = await fetch('/api/calls/outgoing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber })
+        body: JSON.stringify({ phoneNumber }),
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -197,7 +200,8 @@ export function CallsPanel() {
       const response = await fetch(`/api/calls/${callId}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ operatorId: 'current-user' })
+        body: JSON.stringify({ operatorId: 'current-user' }),
+        credentials: 'include',
       });
       if (response.ok) {
         toast({ title: "Qo'ng'iroq qabul qilindi" });
@@ -213,6 +217,7 @@ export function CallsPanel() {
     try {
       const response = await fetch(`/api/calls/${callId}/reject`, {
         method: 'POST',
+        credentials: 'include',
       });
       if (response.ok) {
         toast({ title: "Qo'ng'iroq rad etildi" });

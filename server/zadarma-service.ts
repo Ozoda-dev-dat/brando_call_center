@@ -27,7 +27,7 @@ class ZadarmaService {
 
   constructor() {
     this.apiKey = process.env.ZADARMA_API_KEY || '';
-    this.apiSecret = process.env.ZADARMA_SECRET_KEY || '';
+    this.apiSecret = process.env.ZADARMA_SECRET_KEY || process.env.ZADARMA_API_SECRET || '';
   }
 
   /**

@@ -21,15 +21,17 @@ declare module "express-session" {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
   const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET || 'brando-crm-secret-key-2024',
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction,
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000,
-      sameSite: 'strict',
+      sameSite: 'lax',
     },
     store: new MemoryStore({
       checkPeriod: 86400000,

@@ -60,7 +60,7 @@ npm start      # Runs production server
 
 ### Optional API Keys (Not Required for Basic Functionality)
 - `ZADARMA_API_KEY` - For Zadarma call integration
-- `ZADARMA_SECRET_KEY` - Zadarma authentication
+- `ZADARMA_SECRET_KEY` or `ZADARMA_API_SECRET` - Zadarma authentication (either name works)
 - `ZADARMA_SIP` - SIP extension for outgoing calls
 - `TELEGRAM_BOT_TOKEN` - For Telegram notifications to masters
 - `MASTER_TELEGRAM_MAP` - JSON mapping of master IDs to Telegram chat IDs
@@ -86,6 +86,12 @@ npm run check    # Type check TypeScript
 - Telegram integration for notifications
 
 ## Recent Changes
+- 2024-12-08: Fixed session/authentication issues for proxy environments
+  - Added `trust proxy` setting to Express for proper cookie handling behind reverse proxies
+  - Fixed session cookie sameSite setting to 'lax' for CSRF protection
+  - Updated Zadarma service to accept both `ZADARMA_SECRET_KEY` and `ZADARMA_API_SECRET` env vars
+  - Added missing `credentials: 'include'` to all fetch calls in CallsPanel
+  
 - 2024-12-08: Initial Replit setup completed
   - Database provisioned and migrated
   - Environment configured

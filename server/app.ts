@@ -22,6 +22,8 @@ export function log(message: string, source = "express") {
 
 export const app = express();
 
+app.set('trust proxy', 1);
+
 declare module 'http' {
   interface IncomingMessage {
     rawBody: unknown
