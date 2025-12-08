@@ -147,6 +147,12 @@ npm start
   - Events: `ticket_created`, `ticket_updated`, `incoming_call`, `call_accepted`, `call_rejected`, `call_ended`
 
 ## Recent Changes
+- **2025-12-08**: Zadarma Security & Integration Improvements
+  - Added HMAC-MD5 signature verification for Zadarma webhooks (prevents call event spoofing)
+  - Switched from official `zadarma-api` to community `zadarma` npm package (better API compatibility)
+  - WebRTC key retrieval now working correctly with proper signature generation
+  - Webhook endpoint validates signature from body params or X-Zadarma-Signature header
+
 - **2025-12-08**: Full Zadarma integration setup
   - Fixed Zadarma API signature generation for WebRTC key retrieval
   - Configured call management system (incoming/outgoing calls)
@@ -165,3 +171,8 @@ npm start
 - For production, consider using a persistent session store (e.g., connect-pg-simple with PostgreSQL)
 - External service integrations (Zadarma, Telegram, Twilio) are optional and the app will run without them
 - The frontend is configured to work with Replit's proxy system (allowedHosts: true)
+
+## Security Notes
+- **Zadarma Webhook Security**: The incoming call webhook verifies HMAC-MD5 signatures using ZADARMA_API_SECRET. This prevents unauthorized systems from spoofing call events.
+- **IMPORTANT**: ZADARMA_API_SECRET must be configured in production for webhook signature verification to work properly. Without it, signature verification is bypassed in development mode.
+- All call management endpoints (accept, reject, end) require authenticated sessions with admin/operator roles.
