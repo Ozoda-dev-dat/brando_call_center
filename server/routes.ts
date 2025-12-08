@@ -267,7 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/calls/outgoing', (req, res) => {
+  app.post('/api/calls/outgoing', async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'Authentication required' });
     }
@@ -275,13 +275,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(403).json({ message: 'Access denied' });
     }
     try {
-      const { phoneNumber } = req.body;
-      const callData = zadarmaService.recordOutgoingCall(phoneNumber, req.session.userId);
+      const { phoneNumber, useCallback } = req.body;
+      
+      let callData;
+      if (useCallback) {
+        callData = await zadarmaService.initiateOutgoingCall(phoneNumber, req.session.userId);
+        if (!callData) {
+          return res.status(500).json({ message: 'Failed to initiate call via Zadarma. Check API credentials.' });
+        }
+      } else {
+        callData = zadarmaService.recordOutgoingCall(phoneNumber, req.session.userId);
+      }
+      
       broadcast({ type: 'outgoing_call', data: callData });
-      return res.json({ message: 'Outgoing call recorded', callData });
+      return res.json({ message: 'Outgoing call initiated', callData });
     } catch (error) {
-      console.error('Error recording outgoing call:', error);
-      return res.status(500).json({ message: 'Error recording call' });
+      console.error('Error initiating outgoing call:', error);
+      return res.status(500).json({ message: 'Error initiating call' });
     }
   });
 

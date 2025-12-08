@@ -27,7 +27,7 @@ class ZadarmaService {
 
   constructor() {
     this.apiKey = process.env.ZADARMA_API_KEY || '';
-    this.apiSecret = process.env.ZADARMA_API_SECRET || '';
+    this.apiSecret = process.env.ZADARMA_SECRET_KEY || '';
   }
 
   /**
@@ -151,7 +151,62 @@ class ZadarmaService {
   }
 
   /**
-   * Record an outgoing call initiated by an operator
+   * Initiate a real outgoing call via Zadarma callback API
+   * This will call the operator's SIP first, then connect to the customer
+   */
+  async initiateOutgoingCall(phoneNumber: string, operatorId: string): Promise<CallData | null> {
+    const sipExtension = process.env.ZADARMA_SIP;
+    
+    if (!this.apiKey || !this.apiSecret || !sipExtension) {
+      console.error('Zadarma credentials or SIP not configured');
+      return null;
+    }
+
+    const callId = `out_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    try {
+      console.log(`Initiating outgoing call to ${phoneNumber} via Zadarma callback`);
+      
+      const result = await zadarmaApi({
+        api_method: '/v1/request/callback/',
+        params: {
+          from: sipExtension,
+          to: phoneNumber,
+          predicted: '0',
+        },
+        api_user_key: this.apiKey,
+        api_secret_key: this.apiSecret,
+      });
+
+      const data = typeof result === 'string' ? JSON.parse(result) : result;
+      
+      if (data && data.status === 'success') {
+        console.log('Zadarma callback initiated successfully:', data);
+        
+        const callData: CallData = {
+          callId: data.call_id || callId,
+          from: sipExtension,
+          to: phoneNumber,
+          timestamp: new Date(),
+          operatorId,
+          status: 'outgoing',
+          direction: 'outgoing',
+        };
+
+        this.incomingCalls.set(callData.callId, callData);
+        return callData;
+      } else {
+        console.error('Zadarma callback failed:', data);
+        return null;
+      }
+    } catch (error) {
+      console.error('Failed to initiate outgoing call:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Record an outgoing call initiated by an operator (fallback for WebRTC calls)
    */
   recordOutgoingCall(phoneNumber: string, operatorId: string): CallData {
     const callId = `out_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
