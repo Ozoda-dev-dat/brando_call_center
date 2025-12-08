@@ -139,9 +139,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tickets = await ticketsService.list();
       return res.json(tickets);
-    } catch (error) {
-      console.error('Error listing tickets', error);
-      return res.status(500).json({ message: 'Error listing tickets' });
+    } catch (error: any) {
+      console.error('Error listing tickets:', error?.message || error);
+      return res.status(500).json({ message: 'Error listing tickets', error: error?.message });
     }
   });
 
