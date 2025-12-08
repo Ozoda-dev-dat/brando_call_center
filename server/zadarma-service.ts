@@ -1,3 +1,5 @@
+// @ts-ignore - zadarma package types
+import { api as zadarmaApi } from 'zadarma';
 import crypto from 'crypto';
 
 export interface CallData {
@@ -29,25 +31,7 @@ class ZadarmaService {
   }
 
   /**
-   * Generate Zadarma API signature for authenticated requests
-   * Algorithm: HMAC-SHA1(method + paramsString + MD5(paramsString), secret) -> Base64
-   */
-  private generateApiSignature(method: string, paramsString: string): string {
-    const md5Hash = crypto
-      .createHash('md5')
-      .update(paramsString)
-      .digest('hex');
-
-    const signatureString = method + paramsString + md5Hash;
-
-    return crypto
-      .createHmac('sha1', this.apiSecret)
-      .update(signatureString)
-      .digest('base64');
-  }
-
-  /**
-   * Get dynamic WebRTC key from Zadarma API
+   * Get dynamic WebRTC key from Zadarma API using community library
    * Must be called on each page load as per Zadarma's requirements
    */
   async getWebRTCKey(sipExtension: string): Promise<WebRTCKeyResponse | null> {
@@ -57,30 +41,18 @@ class ZadarmaService {
     }
 
     try {
-      const method = '/v1/webrtc/get_key/';
-      
-      // Build sorted query string (for simple params, just sip=value)
-      const paramsString = `sip=${sipExtension}`;
-      
-      // Generate signature using the exact params string
-      const signature = this.generateApiSignature(method, paramsString);
+      console.log('Zadarma API request: getWebRTCKey for SIP:', sipExtension);
 
-      console.log('Zadarma API request:', {
-        method,
-        paramsString,
-        apiKey: this.apiKey.substring(0, 8) + '...',
+      const result = await zadarmaApi({
+        api_method: '/v1/webrtc/get_key/',
+        params: { sip: sipExtension },
+        api_user_key: this.apiKey,
+        api_secret_key: this.apiSecret,
       });
 
-      const response = await fetch(`https://api.zadarma.com${method}?${paramsString}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `${this.apiKey}:${signature}`,
-        },
-      });
+      const data = typeof result === 'string' ? JSON.parse(result) : result;
 
-      const data = await response.json();
-
-      if (data.status === 'success' && data.key) {
+      if (data && data.status === 'success' && data.key) {
         console.log('Zadarma WebRTC key obtained successfully');
         return {
           key: data.key,

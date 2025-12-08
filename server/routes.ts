@@ -184,7 +184,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // --- Zadarma incoming call webhook and call management ---
   app.post('/api/calls/incoming', (req, res) => {
     try {
-        const callData = zadarmaService.handleIncomingCall(req.body);
+      const params = req.body;
+      const signature = params.signature || req.headers['x-zadarma-signature'] || '';
+      
+      // Verify Zadarma webhook signature for security
+      if (!zadarmaService.verifySignature(params, signature as string)) {
+        console.warn('Invalid Zadarma webhook signature');
+        return res.status(403).json({ message: 'Invalid signature' });
+      }
+
+      const callData = zadarmaService.handleIncomingCall(params);
       broadcast({ type: 'incoming_call', data: callData });
 
       res.set('Content-Type', 'text/xml');

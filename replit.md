@@ -57,12 +57,20 @@ This is a CRM (Customer Relationship Management) system for managing service cen
 - `DATABASE_URL`: PostgreSQL connection string (automatically set by Replit)
 - `SESSION_SECRET`: Secret key for session management (automatically set)
 
-### Optional (for full functionality)
-- `ZADARMA_API_KEY`: Zadarma API key for call integration
+### Zadarma Integration (for real-time calls)
+- `ZADARMA_API_KEY`: Zadarma API key (from Settings → Integrations and API)
 - `ZADARMA_API_SECRET`: Zadarma API secret
-- `ZADARMA_SIP`: Zadarma SIP number
-- `TELEGRAM_BOT_TOKEN`: Telegram bot token for notifications
-- `MASTER_TELEGRAM_MAP`: JSON mapping of master IDs to Telegram chat IDs
+- `ZADARMA_SIP`: Full PBX extension login (e.g., "619765-100" - found in My PBX → Extensions)
+
+**Important Zadarma Setup Steps:**
+1. Enable WebRTC widget in your Zadarma account: Settings → Integrations and API → WebRTC widget
+2. Add your Replit domain to the allowed domains list
+3. Use the **full PBX extension login** for ZADARMA_SIP, not just the extension number
+4. Set up a webhook URL for incoming calls: `https://your-replit-url/api/calls/incoming`
+
+### Optional Services
+- `TELEGRAM_BOT_TOKEN`: Telegram bot token for notifications to masters
+- `MASTER_TELEGRAM_MAP`: JSON mapping of master IDs to Telegram chat IDs (e.g., `{"MS-042": "123456789"}`)
 - `TWILIO_ACCOUNT_SID`: Twilio account SID (alternative to Zadarma)
 - `TWILIO_AUTH_TOKEN`: Twilio auth token
 - `TWILIO_PHONE_NUMBER`: Twilio phone number
@@ -87,9 +95,9 @@ The dev server starts at `http://0.0.0.0:5000` with:
 
 ### Default Users (Seeded)
 After initial setup, the following users are available:
-- **Admin**: username: `admin`, password: `admin123`
-- **Operator**: username: `operator`, password: `operator123`
-- **Master**: username: `master`, password: `master123`
+- **Admin**: username: `admin`, password: `admin2233`
+- **Operator**: username: `operator`, password: `callcenter123`
+- **Master**: username: `master`, password: `MS123`
 
 ### Database Commands
 ```bash
@@ -139,12 +147,18 @@ npm start
   - Events: `ticket_created`, `ticket_updated`, `incoming_call`, `call_accepted`, `call_rejected`, `call_ended`
 
 ## Recent Changes
-- **2024-12-08**: Initial project setup in Replit environment
+- **2025-12-08**: Full Zadarma integration setup
+  - Fixed Zadarma API signature generation for WebRTC key retrieval
+  - Configured call management system (incoming/outgoing calls)
+  - WebSocket real-time updates for call events working
+  - Call history and management endpoints functional
+  
+- **2025-12-08**: Initial project setup in Replit environment
   - PostgreSQL database configured
-  - Environment variables set up
+  - Zadarma credentials configured (API Key, Secret, SIP)
   - Database schema initialized
-  - Development workflow configured
-  - Deployment settings configured
+  - Development workflow configured on port 5000
+  - Deployment settings configured (autoscale)
 
 ## Notes
 - The application uses in-memory session storage (MemoryStore), which is suitable for development but will reset on server restart
