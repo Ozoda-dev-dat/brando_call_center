@@ -23,6 +23,9 @@ declare module "express-session" {
 export async function registerRoutes(app: Express): Promise<Server> {
   const isProduction = process.env.NODE_ENV === 'production';
   
+  // Render kabi proksi serverlar orqasida ishlash uchun qo'shildi
+  app.set('trust proxy', 1); // <--- YANGI QATOR
+  
   const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET || 'brando-crm-secret-key-2024',
     resave: false,
