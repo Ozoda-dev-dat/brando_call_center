@@ -117,7 +117,34 @@ npm start          # Run production server
 
 5. **Session Management**: Uses in-memory session store (MemoryStore) for development. For production with multiple instances, consider using a database-backed session store.
 
+## Zadarma VoIP Integration
+
+The application includes full Zadarma WebRTC integration for real-time calls:
+
+### How It Works
+1. **WebRTC Widget**: Zadarma's official widget script is loaded in `client/index.html`
+2. **API Integration**: The backend fetches dynamic WebRTC keys from Zadarma API
+3. **Call Types**:
+   - **WebRTC Calls**: Direct browser-based calls using the Zadarma widget
+   - **Callback Calls**: Server-initiated calls via Zadarma's callback API
+
+### Required Secrets for Calls
+- `ZADARMA_API_KEY` - API Key from Zadarma control panel
+- `ZADARMA_SECRET_KEY` - API Secret Key from Zadarma control panel  
+- `ZADARMA_SIP` - Your SIP extension number (e.g., "619765")
+
+### Zadarma PBX Configuration
+For incoming calls to work, configure a webhook in Zadarma PBX settings:
+- Webhook URL: `https://your-domain.replit.app/api/calls/incoming`
+- Events: `notify_start`, `notify_end`, `notify_internal`
+
 ## Recent Changes
+- December 8, 2024: Fixed Zadarma integration for real-time calls
+  - Fixed environment variable name mismatch (ZADARMA_SECRET_KEY)
+  - Implemented real outgoing call initiation via Zadarma callback API
+  - Improved ZadarmaWidget initialization with retry mechanism
+  - Verified WebRTC key generation working correctly
+
 - December 8, 2024: Initial import and setup in Replit environment
   - Created .gitignore for Node.js project
   - Pushed database schema using Drizzle
