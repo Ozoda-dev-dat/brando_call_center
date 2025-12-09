@@ -165,24 +165,22 @@ export function CallsPanel() {
       const response = await fetch('/api/calls/outgoing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phoneNumber }),
+        body: JSON.stringify({ phoneNumber, useCallback: true }),
         credentials: 'include',
       });
 
       if (response.ok) {
-        if (window.zadarmaWidget?.call) {
-          window.zadarmaWidget.call(phoneNumber);
-        }
         toast({
           title: "Qo'ng'iroq",
-          description: `${phoneNumber} raqamiga qo'ng'iroq qilinmoqda...`,
+          description: `${phoneNumber} raqamiga qo'ng'iroq qilinmoqda... Zadarma vidjeti orqali davom eting.`,
         });
         setPhoneNumber('');
         refetchCalls();
       } else {
+        const errorData = await response.json().catch(() => ({}));
         toast({
           title: "Xato",
-          description: "Qo'ng'iroqni ro'yxatga olishda xato",
+          description: errorData.message || "Qo'ng'iroqni boshlashda xato",
           variant: "destructive"
         });
       }
