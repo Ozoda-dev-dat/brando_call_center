@@ -32,24 +32,22 @@ export interface OnlinePBXAuthResponse {
 
 class OnlinePBXService {
   private domain: string;
-  private apiKeyId: string;
   private apiKey: string;
   private baseUrl: string;
   private activeCalls: Map<string, OnlinePBXCallData> = new Map();
 
   constructor() {
     this.domain = process.env.ONLINEPBX_DOMAIN || '';
-    this.apiKeyId = process.env.ONLINEPBX_API_KEY_ID || '';
     this.apiKey = process.env.ONLINEPBX_API_KEY || '';
     this.baseUrl = `https://api2.onlinepbx.ru/${this.domain}`;
   }
 
   isConfigured(): boolean {
-    return !!(this.domain && this.apiKeyId && this.apiKey);
+    return !!(this.domain && this.apiKey);
   }
 
   private getAuthHeader(): string {
-    return `${this.apiKeyId}:${this.apiKey}`;
+    return this.apiKey;
   }
 
   async authenticate(apiUserKey: string, apiSecret: string): Promise<OnlinePBXAuthResponse | null> {
