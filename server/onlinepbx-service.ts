@@ -32,7 +32,8 @@ export interface OnlinePBXAuthResponse {
 
 class OnlinePBXService {
   private domain: string;
-  private apiKey: string;
+  private keyId: string;
+  private keySecret: string;
   private baseUrl: string;
   private activeCalls: Map<string, OnlinePBXCallData> = new Map();
 
@@ -42,16 +43,29 @@ class OnlinePBXService {
       domain = `${domain}.onpbx.ru`;
     }
     this.domain = domain;
-    this.apiKey = process.env.ONLINEPBX_API_KEY || '';
+    
+    const apiKey = process.env.ONLINEPBX_API_KEY || '';
+    if (apiKey.includes(':')) {
+      const [keyId, keySecret] = apiKey.split(':', 2);
+      this.keyId = keyId;
+      this.keySecret = keySecret;
+    } else {
+      this.keyId = apiKey;
+      this.keySecret = process.env.ONLINEPBX_WEBHOOK_SECRET || apiKey;
+    }
+    
     this.baseUrl = `https://api2.onlinepbx.ru/${this.domain}`;
   }
 
   isConfigured(): boolean {
-    return !!(this.domain && this.apiKey);
+    return !!(this.domain && this.keyId);
   }
 
   private getAuthHeader(): string {
-    return this.apiKey;
+    if (this.keyId && this.keySecret && this.keyId !== this.keySecret) {
+      return `${this.keyId}:${this.keySecret}`;
+    }
+    return this.keyId;
   }
 
   async authenticate(apiUserKey: string, apiSecret: string): Promise<OnlinePBXAuthResponse | null> {
@@ -164,9 +178,14 @@ class OnlinePBXService {
   }
 
   verifyWebhookSignature(params: Record<string, string>, signature: string): boolean {
-    if (!this.apiKey) {
-      console.warn('OnlinePBX API key not configured, skipping signature verification');
-      return true;
+    if (!this.keySecret) {
+      console.error('OnlinePBX webhook secret not configured, rejecting webhook');
+      return false;
+    }
+
+    if (!signature) {
+      console.warn('No signature provided in webhook request');
+      return false;
     }
 
     const sortedKeys = Object.keys(params)
@@ -174,15 +193,33 @@ class OnlinePBXService {
       .sort();
     
     const queryString = sortedKeys
-      .map(k => `${k}=${params[k]}`)
+      .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
       .join('&');
 
     const computed = crypto
-      .createHmac('sha256', this.apiKey)
+      .createHmac('sha256', this.keySecret)
       .update(queryString)
       .digest('hex');
 
-    return computed === signature;
+    if (computed !== signature) {
+      const queryStringWithoutEncode = sortedKeys
+        .map(k => `${k}=${params[k]}`)
+        .join('&');
+      
+      const computedAlt = crypto
+        .createHmac('sha256', this.keySecret)
+        .update(queryStringWithoutEncode)
+        .digest('hex');
+      
+      if (computedAlt === signature) {
+        return true;
+      }
+      
+      console.warn('OnlinePBX webhook signature mismatch');
+      return false;
+    }
+
+    return true;
   }
 
   handleIncomingCallWebhook(params: Record<string, string>): OnlinePBXCallData | null {
@@ -208,8 +245,24 @@ class OnlinePBXService {
     const callId = params.call_id;
     if (!callId) return null;
 
-    const callData = this.activeCalls.get(callId);
-    if (!callData) return null;
+    let callData = this.activeCalls.get(callId);
+    
+    if (!callData) {
+      const from = params.caller_id || params.from || 'Unknown';
+      const to = params.called_did || params.to || '';
+      const direction = params.direction === 'out' ? 'outgoing' : 'incoming';
+      
+      callData = {
+        callId,
+        from,
+        to,
+        timestamp: new Date(params.start || Date.now()),
+        status: direction === 'outgoing' ? 'outgoing' : 'incoming',
+        direction,
+        provider: 'onlinepbx',
+      };
+      this.activeCalls.set(callId, callData);
+    }
 
     const event = params.event || params.status;
     
