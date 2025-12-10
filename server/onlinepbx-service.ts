@@ -69,7 +69,7 @@ class OnlinePBXService {
       const data = await response.json();
       console.log('OnlinePBX auth response:', JSON.stringify(data));
 
-      if (data.status === 1 || data.status === 'success') {
+      if (data.status === 1 || data.status === '1' || data.status === 'success') {
         this.secretKey = data.data?.key || data.key;
         this.secretKeyId = data.data?.key_id || data.key_id;
         this.authExpiry = Date.now() + 3600000;
@@ -152,7 +152,7 @@ class OnlinePBXService {
 
     const data = await this.sendRequest('mongo_history/search.json', params);
 
-    if (data && (data.status === 1 || data.status === 'success') && data.data) {
+    if (data && (data.status === 1 || data.status === '1' || data.status === 'success') && data.data) {
       return data.data;
     }
 
@@ -169,7 +169,7 @@ class OnlinePBXService {
     const data = await this.sendRequest('make_call/request.json', params);
     console.log('OnlinePBX make_call response:', JSON.stringify(data));
 
-    if (data && (data.status === 1 || data.status === 'success')) {
+    if (data && (data.status === 1 || data.status === '1' || data.status === 'success')) {
       const callId = data.data?.call_id || data.call_id || `opbx_${Date.now()}`;
       const callData: OnlinePBXCallData = {
         callId,
@@ -350,7 +350,7 @@ class OnlinePBXService {
   async getExtensions(): Promise<any[]> {
     const data = await this.sendRequest('sip/list.json');
     
-    if (data && (data.status === 1 || data.status === 'success')) {
+    if (data && (data.status === 1 || data.status === '1' || data.status === 'success')) {
       return data.data || [];
     }
     
