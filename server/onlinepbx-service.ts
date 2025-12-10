@@ -24,161 +24,175 @@ export interface OnlinePBXCallHistoryItem {
   record?: string;
 }
 
-export interface OnlinePBXAuthResponse {
-  status: string;
-  key_id: string;
-  key: string;
-}
-
 class OnlinePBXService {
   private domain: string;
-  private keyId: string;
-  private keySecret: string;
+  private authKey: string;
   private baseUrl: string;
   private activeCalls: Map<string, OnlinePBXCallData> = new Map();
+  
+  private secretKey: string | null = null;
+  private secretKeyId: string | null = null;
+  private authExpiry: number = 0;
 
   constructor() {
     let domain = process.env.ONLINEPBX_DOMAIN || '';
     if (domain && !domain.includes('.')) {
       domain = `${domain}.onpbx.ru`;
     }
-    this.domain = domain;
-    
-    const apiKey = process.env.ONLINEPBX_API_KEY || '';
-    if (apiKey.includes(':')) {
-      const [keyId, keySecret] = apiKey.split(':', 2);
-      this.keyId = keyId;
-      this.keySecret = keySecret;
-    } else {
-      this.keyId = apiKey;
-      this.keySecret = process.env.ONLINEPBX_WEBHOOK_SECRET || apiKey;
+    if (domain.endsWith('/')) {
+      domain = domain.slice(0, -1);
     }
-    
-    this.baseUrl = `https://api2.onlinepbx.ru/${this.domain}`;
+    this.domain = domain;
+    this.authKey = process.env.ONLINEPBX_API_KEY || '';
+    this.baseUrl = `https://api.onlinepbx.ru/${this.domain}`;
   }
 
   isConfigured(): boolean {
-    return !!(this.domain && this.keyId);
+    return !!(this.domain && this.authKey);
   }
 
-  private getAuthHeader(): string {
-    if (this.keyId && this.keySecret && this.keyId !== this.keySecret) {
-      return `${this.keyId}:${this.keySecret}`;
+  private async authenticate(): Promise<boolean> {
+    if (this.secretKey && this.secretKeyId && Date.now() < this.authExpiry) {
+      return true;
     }
-    return this.keyId;
-  }
 
-  async authenticate(apiUserKey: string, apiSecret: string): Promise<OnlinePBXAuthResponse | null> {
     try {
-      const response = await fetch(`https://api2.onlinepbx.ru/${this.domain}/auth.json`, {
+      console.log('OnlinePBX: Authenticating...');
+      const response = await fetch(`${this.baseUrl}/auth.json`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: `auth_user_key=${encodeURIComponent(apiUserKey)}&auth_user_secret=${encodeURIComponent(apiSecret)}`,
+        body: `auth_key=${encodeURIComponent(this.authKey)}`,
       });
 
       const data = await response.json();
-      
-      if (data.status === 'success') {
-        return data;
+      console.log('OnlinePBX auth response:', JSON.stringify(data));
+
+      if (data.status === 1 || data.status === 'success') {
+        this.secretKey = data.data?.key || data.key;
+        this.secretKeyId = data.data?.key_id || data.key_id;
+        this.authExpiry = Date.now() + 3600000;
+        console.log('OnlinePBX: Authentication successful, key_id:', this.secretKeyId);
+        return true;
       }
-      
+
       console.error('OnlinePBX authentication failed:', data);
-      return null;
+      return false;
     } catch (error) {
       console.error('OnlinePBX auth error:', error);
+      return false;
+    }
+  }
+
+  private createSignature(method: string, path: string, body: string, date: string): string {
+    if (!this.secretKey) {
+      throw new Error('No secret key available');
+    }
+
+    const contentType = 'application/x-www-form-urlencoded';
+    const contentMd5 = crypto.createHash('md5').update(body).digest('hex');
+    const signUrl = `api.onlinepbx.ru/${this.domain}/${path}`;
+    const signData = `${method}\n${contentMd5}\n${contentType}\n${date}\n${signUrl}\n`;
+    
+    const signature = crypto
+      .createHmac('sha1', this.secretKey)
+      .update(signData)
+      .digest('base64');
+
+    return signature;
+  }
+
+  private async sendRequest(path: string, params: Record<string, string> = {}): Promise<any> {
+    if (!this.isConfigured()) {
+      console.error('OnlinePBX not configured');
+      return null;
+    }
+
+    const authenticated = await this.authenticate();
+    if (!authenticated) {
+      console.error('OnlinePBX: Failed to authenticate');
+      return null;
+    }
+
+    try {
+      const date = new Date().toUTCString();
+      const body = new URLSearchParams(params).toString();
+      const signature = this.createSignature('POST', path, body, date);
+      const contentMd5 = crypto.createHash('md5').update(body).digest('hex');
+
+      const response = await fetch(`${this.baseUrl}/${path}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': 'application/json',
+          'Date': date,
+          'Content-MD5': contentMd5,
+          'x-pbx-authentication': `${this.secretKeyId}:${signature}`,
+        },
+        body: body,
+      });
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error(`OnlinePBX request error for ${path}:`, error);
       return null;
     }
   }
 
   async getCallHistory(dateFrom?: Date, dateTo?: Date): Promise<OnlinePBXCallHistoryItem[]> {
-    if (!this.isConfigured()) {
-      console.error('OnlinePBX not configured');
-      return [];
+    const from = dateFrom || new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const to = dateTo || new Date();
+
+    const params: Record<string, string> = {
+      date_from: from.toISOString().split('T')[0],
+      date_to: to.toISOString().split('T')[0],
+    };
+
+    const data = await this.sendRequest('mongo_history/search.json', params);
+
+    if (data && (data.status === 1 || data.status === 'success') && data.data) {
+      return data.data;
     }
 
-    try {
-      const from = dateFrom || new Date(Date.now() - 24 * 60 * 60 * 1000);
-      const to = dateTo || new Date();
-
-      const params = new URLSearchParams({
-        date_from: from.toISOString(),
-        date_to: to.toISOString(),
-      });
-
-      const response = await fetch(`${this.baseUrl}/mongo_history/search.json`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'x-pbx-authentication': this.getAuthHeader(),
-        },
-        body: params.toString(),
-      });
-
-      const data = await response.json();
-
-      if (data.status === 'success' && data.data) {
-        return data.data;
-      }
-
-      console.error('OnlinePBX call history error:', data);
-      return [];
-    } catch (error) {
-      console.error('Failed to get OnlinePBX call history:', error);
-      return [];
-    }
+    console.error('OnlinePBX call history error:', data);
+    return [];
   }
 
   async initiateCall(from: string, to: string): Promise<OnlinePBXCallData | null> {
-    if (!this.isConfigured()) {
-      console.error('OnlinePBX not configured');
-      return null;
+    const params: Record<string, string> = {
+      from: from,
+      to: to,
+    };
+
+    const data = await this.sendRequest('make_call/request.json', params);
+    console.log('OnlinePBX make_call response:', JSON.stringify(data));
+
+    if (data && (data.status === 1 || data.status === 'success')) {
+      const callId = data.data?.call_id || data.call_id || `opbx_${Date.now()}`;
+      const callData: OnlinePBXCallData = {
+        callId,
+        from,
+        to,
+        timestamp: new Date(),
+        status: 'outgoing',
+        direction: 'outgoing',
+        provider: 'onlinepbx',
+      };
+
+      this.activeCalls.set(callId, callData);
+      return callData;
     }
 
-    try {
-      const params = new URLSearchParams({
-        from: from,
-        to: to,
-      });
-
-      const response = await fetch(`${this.baseUrl}/make_call/request.json`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          'x-pbx-authentication': this.getAuthHeader(),
-        },
-        body: params.toString(),
-      });
-
-      const data = await response.json();
-
-      if (data.status === 'success') {
-        const callId = data.call_id || `opbx_${Date.now()}`;
-        const callData: OnlinePBXCallData = {
-          callId,
-          from,
-          to,
-          timestamp: new Date(),
-          status: 'outgoing',
-          direction: 'outgoing',
-          provider: 'onlinepbx',
-        };
-        
-        this.activeCalls.set(callId, callData);
-        return callData;
-      }
-
-      console.error('OnlinePBX initiate call error:', data);
-      return null;
-    } catch (error) {
-      console.error('Failed to initiate OnlinePBX call:', error);
-      return null;
-    }
+    console.error('OnlinePBX initiate call error:', data);
+    return null;
   }
 
   verifyWebhookSignature(params: Record<string, string>, signature: string): boolean {
-    if (!this.keySecret) {
+    const webhookSecret = process.env.ONLINEPBX_WEBHOOK_SECRET || '';
+    
+    if (!webhookSecret) {
       console.error('OnlinePBX webhook secret not configured, rejecting webhook');
       return false;
     }
@@ -191,13 +205,13 @@ class OnlinePBXService {
     const sortedKeys = Object.keys(params)
       .filter(k => k !== 'signature')
       .sort();
-    
+
     const queryString = sortedKeys
       .map(k => `${encodeURIComponent(k)}=${encodeURIComponent(params[k])}`)
       .join('&');
 
     const computed = crypto
-      .createHmac('sha256', this.keySecret)
+      .createHmac('sha256', webhookSecret)
       .update(queryString)
       .digest('hex');
 
@@ -205,16 +219,16 @@ class OnlinePBXService {
       const queryStringWithoutEncode = sortedKeys
         .map(k => `${k}=${params[k]}`)
         .join('&');
-      
+
       const computedAlt = crypto
-        .createHmac('sha256', this.keySecret)
+        .createHmac('sha256', webhookSecret)
         .update(queryStringWithoutEncode)
         .digest('hex');
-      
+
       if (computedAlt === signature) {
         return true;
       }
-      
+
       console.warn('OnlinePBX webhook signature mismatch');
       return false;
     }
@@ -246,12 +260,12 @@ class OnlinePBXService {
     if (!callId) return null;
 
     let callData = this.activeCalls.get(callId);
-    
+
     if (!callData) {
       const from = params.caller_id || params.from || 'Unknown';
       const to = params.called_did || params.to || '';
       const direction = params.direction === 'out' ? 'outgoing' : 'incoming';
-      
+
       callData = {
         callId,
         from,
@@ -265,7 +279,7 @@ class OnlinePBXService {
     }
 
     const event = params.event || params.status;
-    
+
     switch (event) {
       case 'ANSWER':
       case 'answered':
@@ -328,30 +342,20 @@ class OnlinePBXService {
   }
 
   listCalls(): OnlinePBXCallData[] {
-    return Array.from(this.activeCalls.values()).sort((a, b) => 
+    return Array.from(this.activeCalls.values()).sort((a, b) =>
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
   }
 
   async getExtensions(): Promise<any[]> {
-    if (!this.isConfigured()) {
-      return [];
+    const data = await this.sendRequest('sip/list.json');
+    
+    if (data && (data.status === 1 || data.status === 'success')) {
+      return data.data || [];
     }
-
-    try {
-      const response = await fetch(`${this.baseUrl}/sip/list.json`, {
-        method: 'POST',
-        headers: {
-          'x-pbx-authentication': this.getAuthHeader(),
-        },
-      });
-
-      const data = await response.json();
-      return data.status === 'success' ? data.data : [];
-    } catch (error) {
-      console.error('Failed to get OnlinePBX extensions:', error);
-      return [];
-    }
+    
+    console.error('Failed to get OnlinePBX extensions:', data);
+    return [];
   }
 
   getDomain(): string {
