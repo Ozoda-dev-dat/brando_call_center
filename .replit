@@ -34,10 +34,16 @@ localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 42113
-externalPort = 3000
+localPort = 38855
+externalPort = 3001
 
 [deployment]
 deploymentTarget = "autoscale"
 run = ["npm", "run", "start"]
 build = ["npm", "run", "build"]
+
+[userenv]
+
+[userenv.shared]
+ONLINEPBX_DOMAIN = "pbx15099"
+ONLINEPBX_API_KEY_ID = "pbx15099"
