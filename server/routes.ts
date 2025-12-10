@@ -5,7 +5,6 @@ import session from "express-session";
 import memorystore from "memorystore";
 import { seedUsers } from "./seed";
 import { WebSocket, WebSocketServer } from "ws";
-import { zadarmaService, type IncomingCallData } from "./zadarma-service";
 import { onlinePBXService, type OnlinePBXCallData } from "./onlinepbx-service";
 import { ticketsService } from "./tickets-service";
 import { telegramService } from "./telegram-service";
@@ -24,8 +23,7 @@ declare module "express-session" {
 export async function registerRoutes(app: Express): Promise<Server> {
   const isProduction = process.env.NODE_ENV === 'production';
   
-  // Render kabi proksi serverlar orqasida ishlash uchun qo'shildi
-  app.set('trust proxy', 1); // <--- YANGI QATOR
+  app.set('trust proxy', 1);
   
   const sessionMiddleware = session({
     secret: process.env.SESSION_SECRET || 'brando-crm-secret-key-2024',
@@ -275,7 +273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // --- List all calls for admin dashboard ---
+  // --- List all calls (uses OnlinePBX) ---
   app.get('/api/calls', (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'Authentication required' });
@@ -283,96 +281,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (req.session.role !== 'admin' && req.session.role !== 'operator') {
       return res.status(403).json({ message: 'Access denied' });
     }
-    const calls = zadarmaService.listCalls();
+    const calls = onlinePBXService.listCalls();
     return res.json(calls);
   });
 
-  // --- Zadarma incoming call webhook and call management ---
-  app.post('/api/calls/incoming', (req, res) => {
-    try {
-      const params = req.body;
-      const signature = params.signature || req.headers['x-zadarma-signature'] || '';
-      
-      // Verify Zadarma webhook signature for security
-      if (!zadarmaService.verifySignature(params, signature as string)) {
-        console.warn('Invalid Zadarma webhook signature');
-        return res.status(403).json({ message: 'Invalid signature' });
-      }
-
-      const callData = zadarmaService.handleIncomingCall(params);
-      broadcast({ type: 'incoming_call', data: callData });
-
-      res.set('Content-Type', 'text/xml');
-      res.send(`<?xml version="1.0" encoding="UTF-8"?>\n<Response>\n  <Say>Your call has been received</Say>\n</Response>`);
-    } catch (error) {
-      console.error('Error handling incoming call:', error);
-      res.status(500).json({ message: 'Error processing call' });
-    }
-  });
-
-  app.post('/api/calls/:callSid/accept', (req, res) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-    try {
-      const { callSid } = req.params;
-      const operatorId = req.session.userId;
-
-      const callData = zadarmaService.getCallData(callSid);
-      if (callData) {
-        callData.status = 'accepted';
-        callData.operatorId = operatorId;
-      }
-
-      broadcast({ type: 'call_accepted', data: callData });
-
-      return res.json({ message: 'Call accepted', callData });
-    } catch (error) {
-      console.error('Error accepting call:', error);
-      return res.status(500).json({ message: 'Error accepting call' });
-    }
-  });
-
-  app.post('/api/calls/:callSid/reject', async (req, res) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-    try {
-      const { callSid } = req.params;
-      await zadarmaService.rejectCall(callSid);
-      broadcast({ type: 'call_rejected', data: { callSid } });
-      return res.json({ message: 'Call rejected' });
-    } catch (error) {
-      console.error('Error rejecting call:', error);
-      return res.status(500).json({ message: 'Error rejecting call' });
-    }
-  });
-
-  app.post('/api/calls/:callSid/end', (req, res) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
-      return res.status(403).json({ message: 'Access denied' });
-    }
-    try {
-      const { callSid } = req.params;
-      const { duration } = req.body;
-      zadarmaService.endCall(callSid, duration || 0);
-      broadcast({ type: 'call_ended', data: { callSid, duration } });
-      return res.json({ message: 'Call ended' });
-    } catch (error) {
-      console.error('Error ending call:', error);
-      return res.status(500).json({ message: 'Error ending call' });
-    }
-  });
-
+  // --- Outgoing call endpoint (uses OnlinePBX) ---
   app.post('/api/calls/outgoing', async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'Authentication required' });
@@ -381,48 +294,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(403).json({ message: 'Access denied' });
     }
     try {
-      const { phoneNumber, useCallback } = req.body;
+      const { phoneNumber, sipExtension } = req.body;
       
-      let callData;
-      if (useCallback) {
-        callData = await zadarmaService.initiateOutgoingCall(phoneNumber, req.session.userId);
-        if (!callData) {
-          return res.status(500).json({ message: 'Failed to initiate call via Zadarma. Check API credentials.' });
-        }
-      } else {
-        callData = zadarmaService.recordOutgoingCall(phoneNumber, req.session.userId);
+      if (!onlinePBXService.isConfigured()) {
+        return res.status(500).json({ message: 'OnlinePBX not configured. Please set API credentials.' });
       }
       
-      broadcast({ type: 'outgoing_call', data: callData });
+      const fromExtension = sipExtension || process.env.ONLINEPBX_DEFAULT_SIP || 'default';
+      const callData = await onlinePBXService.initiateCall(fromExtension, phoneNumber);
+      
+      if (!callData) {
+        return res.status(500).json({ message: 'Failed to initiate call via OnlinePBX. Check API credentials.' });
+      }
+      
+      broadcast({ type: 'onlinepbx_outgoing_call', data: callData });
       return res.json({ message: 'Outgoing call initiated', callData });
     } catch (error) {
       console.error('Error initiating outgoing call:', error);
       return res.status(500).json({ message: 'Error initiating call' });
-    }
-  });
-
-  app.get('/api/zadarma/widget-config', async (req, res) => {
-    if (!req.session.userId) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-
-    const sip = process.env.ZADARMA_SIP;
-
-    if (!sip) {
-      return res.status(404).json({ message: 'Zadarma SIP not configured' });
-    }
-
-    try {
-      const webrtcConfig = await zadarmaService.getWebRTCKey(sip);
-      
-      if (!webrtcConfig) {
-        return res.status(500).json({ message: 'Failed to get WebRTC key from Zadarma' });
-      }
-
-      return res.json({ key: webrtcConfig.key, sip: webrtcConfig.sip });
-    } catch (error) {
-      console.error('Error getting Zadarma WebRTC config:', error);
-      return res.status(500).json({ message: 'Error getting WebRTC configuration' });
     }
   });
 
@@ -665,23 +554,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     console.log(`WS client connected: user=${ws.userId}, role=${ws.role}`);
     clients.push(ws);
 
-    ws.on('message', (message) => {
-      try {
-        const data = JSON.parse(message.toString());
-        if (data && data.type === 'identify' && data.role === 'master' && data.masterId) {
-          ws.masterId = data.masterId;
-        }
-      } catch (e) {
-        console.error('Error parsing ws message', e);
-      }
-    });
-
     ws.on('close', () => {
-      const idx = clients.indexOf(ws);
-      if (idx > -1) clients.splice(idx, 1);
+      const index = clients.indexOf(ws);
+      if (index !== -1) {
+        clients.splice(index, 1);
+      }
+      console.log(`WS client disconnected: user=${ws.userId}`);
     });
 
-    ws.on('error', (err) => console.error('WS error', err));
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
   });
 
   return httpServer;

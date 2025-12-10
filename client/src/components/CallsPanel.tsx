@@ -18,29 +18,13 @@ interface CallRecord {
   duration?: number;
   operatorId?: string;
   direction?: 'incoming' | 'outgoing';
-  provider?: 'zadarma' | 'onlinepbx' | 'twilio';
+  provider?: 'onlinepbx';
   recordingUrl?: string;
 }
 
 interface OnlinePBXStatus {
   configured: boolean;
   domain: string;
-}
-
-declare global {
-  interface Window {
-    zadarmaWidgetFn?: (
-      key: string,
-      sip: string,
-      shape: 'square' | 'rounded',
-      lang: string,
-      show: boolean,
-      position: { right: string; bottom: string }
-    ) => void;
-    zadarmaWidget?: {
-      call?: (number: string) => void;
-    };
-  }
 }
 
 function formatDuration(seconds: number): string {
@@ -100,8 +84,7 @@ function getStatusBadge(status: string, direction?: string) {
 export function CallsPanel() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [incomingCalls, setIncomingCalls] = useState<CallRecord[]>([]);
-  const [selectedProvider, setSelectedProvider] = useState<'all' | 'zadarma' | 'onlinepbx'>('all');
-  const [callProvider, setCallProvider] = useState<'zadarma' | 'onlinepbx'>('zadarma');
+  const [sipExtension, setSipExtension] = useState('');
   const { toast } = useToast();
 
   const { data: onlinepbxStatus } = useQuery<OnlinePBXStatus>({
@@ -117,21 +100,6 @@ export function CallsPanel() {
     },
   });
 
-  const { data: zadarmaCallHistory = [], refetch: refetchZadarmaCalls } = useQuery<CallRecord[]>({
-    queryKey: ['/api/calls'],
-    queryFn: async () => {
-      const response = await fetch('/api/calls', {
-        credentials: 'include',
-      });
-      if (!response.ok) {
-        throw new Error('Failed to fetch calls');
-      }
-      const data = await response.json();
-      return data.map((call: CallRecord) => ({ ...call, provider: 'zadarma' as const }));
-    },
-    refetchInterval: 5000,
-  });
-
   const { data: onlinepbxActiveCalls = [], refetch: refetchOnlinePBXActive } = useQuery<CallRecord[]>({
     queryKey: ['/api/onlinepbx/calls'],
     queryFn: async () => {
@@ -144,7 +112,6 @@ export function CallsPanel() {
       return response.json();
     },
     refetchInterval: 5000,
-    enabled: onlinepbxStatus?.configured ?? false,
   });
 
   const { data: onlinepbxHistory = [], refetch: refetchOnlinePBXHistory } = useQuery<CallRecord[]>({
@@ -170,25 +137,15 @@ export function CallsPanel() {
       }));
     },
     refetchInterval: 30000,
-    enabled: onlinepbxStatus?.configured ?? false,
   });
 
-  const onlinepbxCallHistory = [...onlinepbxActiveCalls, ...onlinepbxHistory];
-
-  const callHistory = [...zadarmaCallHistory, ...onlinepbxCallHistory].sort(
+  const callHistory = [...onlinepbxActiveCalls, ...onlinepbxHistory].sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
   );
 
-  const filteredCallHistory = selectedProvider === 'all' 
-    ? callHistory 
-    : callHistory.filter(c => c.provider === selectedProvider);
-
   const refetchCalls = () => {
-    refetchZadarmaCalls();
-    if (onlinepbxStatus?.configured) {
-      refetchOnlinePBXActive();
-      refetchOnlinePBXHistory();
-    }
+    refetchOnlinePBXActive();
+    refetchOnlinePBXHistory();
   };
 
   useEffect(() => {
@@ -199,27 +156,18 @@ export function CallsPanel() {
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
-        if (message.type === 'incoming_call') {
-          const callData = { ...message.data as CallRecord, provider: 'zadarma' as const };
-          setIncomingCalls(prev => [callData, ...prev.filter(c => c.callId !== callData.callId)]);
-          toast({
-            title: "Kiruvchi qo'ng'iroq (Zadarma)",
-            description: `${callData.from} raqamidan`,
-          });
-          refetchCalls();
-        } else if (message.type === 'onlinepbx_incoming_call') {
+        if (message.type === 'onlinepbx_incoming_call') {
           const callData = message.data as CallRecord;
           setIncomingCalls(prev => [callData, ...prev.filter(c => c.callId !== callData.callId)]);
           toast({
-            title: "Kiruvchi qo'ng'iroq (OnlinePBX)",
+            title: "Kiruvchi qo'ng'iroq",
             description: `${callData.from} raqamidan`,
           });
           refetchCalls();
-        } else if (message.type === 'call_accepted' || message.type === 'call_rejected' || message.type === 'call_ended') {
-          setIncomingCalls(prev => prev.filter(c => c.callId !== message.data?.callSid && c.callId !== message.data?.callId));
-          refetchCalls();
         } else if (message.type === 'onlinepbx_call_accepted' || message.type === 'onlinepbx_call_rejected' || message.type === 'onlinepbx_call_ended' || message.type === 'onlinepbx_call_status') {
           setIncomingCalls(prev => prev.filter(c => c.callId !== message.data?.callId));
+          refetchCalls();
+        } else if (message.type === 'onlinepbx_outgoing_call') {
           refetchCalls();
         }
       } catch (error) {
@@ -234,7 +182,7 @@ export function CallsPanel() {
     return () => {
       ws.close();
     };
-  }, [toast, refetchCalls]);
+  }, [toast]);
 
   const handleDialerInput = (digit: string) => {
     setPhoneNumber(prev => prev + digit);
@@ -254,24 +202,25 @@ export function CallsPanel() {
       return;
     }
 
+    if (!onlinepbxStatus?.configured) {
+      toast({
+        title: "Xato",
+        description: "OnlinePBX sozlanmagan. Administrator bilan bog'laning.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
-      let response;
-      
-      if (callProvider === 'onlinepbx' && onlinepbxStatus?.configured) {
-        response = await fetch('/api/onlinepbx/call', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ from: 'default', to: phoneNumber }),
-          credentials: 'include',
-        });
-      } else {
-        response = await fetch('/api/calls/outgoing', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phoneNumber, useCallback: true }),
-          credentials: 'include',
-        });
-      }
+      const response = await fetch('/api/calls/outgoing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          phoneNumber, 
+          sipExtension: sipExtension || undefined 
+        }),
+        credentials: 'include',
+      });
 
       if (response.ok) {
         toast({
@@ -297,13 +246,9 @@ export function CallsPanel() {
     }
   };
 
-  const handleAcceptCall = async (callId: string, provider?: string) => {
+  const handleAcceptCall = async (callId: string) => {
     try {
-      const endpoint = provider === 'onlinepbx' 
-        ? `/api/onlinepbx/calls/${callId}/accept`
-        : `/api/calls/${callId}/accept`;
-      
-      const response = await fetch(endpoint, {
+      const response = await fetch(`/api/onlinepbx/calls/${callId}/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ operatorId: 'current-user' }),
@@ -319,13 +264,9 @@ export function CallsPanel() {
     }
   };
 
-  const handleRejectCall = async (callId: string, provider?: string) => {
+  const handleRejectCall = async (callId: string) => {
     try {
-      const endpoint = provider === 'onlinepbx' 
-        ? `/api/onlinepbx/calls/${callId}/reject`
-        : `/api/calls/${callId}/reject`;
-      
-      const response = await fetch(endpoint, {
+      const response = await fetch(`/api/onlinepbx/calls/${callId}/reject`, {
         method: 'POST',
         credentials: 'include',
       });
@@ -364,26 +305,18 @@ export function CallsPanel() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {onlinepbxStatus?.configured && (
-                <div className="flex gap-2 mb-2">
-                  <Button
-                    variant={callProvider === 'zadarma' ? 'default' : 'outline'}
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => setCallProvider('zadarma')}
-                  >
-                    Zadarma
-                  </Button>
-                  <Button
-                    variant={callProvider === 'onlinepbx' ? 'default' : 'outline'}
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => setCallProvider('onlinepbx')}
-                  >
-                    OnlinePBX
-                  </Button>
+              {!onlinepbxStatus?.configured && (
+                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700 text-sm">
+                  OnlinePBX sozlanmagan. Qo'ng'iroq qilish uchun API kalitlarini sozlang.
                 </div>
               )}
+              
+              {onlinepbxStatus?.configured && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
+                  OnlinePBX ulangan: {onlinepbxStatus.domain}
+                </div>
+              )}
+              
               <div className="flex gap-2">
                 <Input
                   type="tel"
@@ -396,6 +329,14 @@ export function CallsPanel() {
                   <Delete className="w-5 h-5" />
                 </Button>
               </div>
+
+              <Input
+                type="text"
+                placeholder="SIP raqami (ixtiyoriy)"
+                value={sipExtension}
+                onChange={(e) => setSipExtension(e.target.value)}
+                className="text-sm"
+              />
 
               <div className="grid grid-cols-3 gap-2">
                 {dialerButtons.map((row, rowIndex) => (
@@ -415,6 +356,7 @@ export function CallsPanel() {
               <Button
                 className="w-full h-14 text-lg gap-2 bg-green-600 hover:bg-green-700"
                 onClick={handleCall}
+                disabled={!onlinepbxStatus?.configured}
               >
                 <Phone className="w-5 h-5" />
                 Qo'ng'iroq qilish
@@ -425,34 +367,7 @@ export function CallsPanel() {
 
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>Qo'ng'iroqlar tarixi</span>
-              {onlinepbxStatus?.configured && (
-                <div className="flex gap-2">
-                  <Button
-                    variant={selectedProvider === 'all' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedProvider('all')}
-                  >
-                    Barchasi
-                  </Button>
-                  <Button
-                    variant={selectedProvider === 'zadarma' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedProvider('zadarma')}
-                  >
-                    Zadarma
-                  </Button>
-                  <Button
-                    variant={selectedProvider === 'onlinepbx' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedProvider('onlinepbx')}
-                  >
-                    OnlinePBX
-                  </Button>
-                </div>
-              )}
-            </CardTitle>
+            <CardTitle>Qo'ng'iroqlar tarixi</CardTitle>
             <CardDescription>
               So'nggi qo'ng'iroqlar ro'yxati
               {onlinepbxStatus?.configured && (
@@ -470,16 +385,16 @@ export function CallsPanel() {
               </TabsList>
 
               <TabsContent value="all">
-                <CallList calls={filteredCallHistory} />
+                <CallList calls={callHistory} />
               </TabsContent>
               <TabsContent value="incoming">
-                <CallList calls={filteredCallHistory.filter(c => c.direction === 'incoming' || (!c.direction && c.status !== 'outgoing'))} />
+                <CallList calls={callHistory.filter(c => c.direction === 'incoming' || (!c.direction && c.status !== 'outgoing'))} />
               </TabsContent>
               <TabsContent value="outgoing">
-                <CallList calls={filteredCallHistory.filter(c => c.direction === 'outgoing' || c.status === 'outgoing')} />
+                <CallList calls={callHistory.filter(c => c.direction === 'outgoing' || c.status === 'outgoing')} />
               </TabsContent>
               <TabsContent value="missed">
-                <CallList calls={filteredCallHistory.filter(c => c.status === 'missed' || c.status === 'rejected')} />
+                <CallList calls={callHistory.filter(c => c.status === 'missed' || c.status === 'rejected')} />
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -513,27 +428,21 @@ export function CallsPanel() {
                     </div>
                   </div>
                   <div className="flex gap-2 items-center">
-                    {call.provider && (
-                      <Badge variant="outline" className={
-                        call.provider === 'onlinepbx' 
-                          ? 'bg-purple-50 text-purple-700 border-purple-200' 
-                          : 'bg-blue-50 text-blue-700 border-blue-200'
-                      }>
-                        {call.provider === 'onlinepbx' ? 'OnlinePBX' : 'Zadarma'}
-                      </Badge>
-                    )}
+                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                      OnlinePBX
+                    </Badge>
                     <Button
                       variant="outline"
                       size="sm"
                       className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
-                      onClick={() => handleRejectCall(call.callId, call.provider)}
+                      onClick={() => handleRejectCall(call.callId)}
                     >
                       Rad etish
                     </Button>
                     <Button
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
-                      onClick={() => handleAcceptCall(call.callId, call.provider)}
+                      onClick={() => handleAcceptCall(call.callId)}
                     >
                       Qabul qilish
                     </Button>
@@ -591,15 +500,9 @@ function CallList({ calls }: { calls: CallRecord[] }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {call.provider && (
-                <Badge variant="outline" className={
-                  call.provider === 'onlinepbx' 
-                    ? 'bg-purple-50 text-purple-700 border-purple-200' 
-                    : 'bg-blue-50 text-blue-700 border-blue-200'
-                }>
-                  {call.provider === 'onlinepbx' ? 'OnlinePBX' : 'Zadarma'}
-                </Badge>
-              )}
+              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                OnlinePBX
+              </Badge>
               {getStatusBadge(call.status, call.direction)}
             </div>
           </div>

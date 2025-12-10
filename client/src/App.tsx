@@ -6,7 +6,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthContext, useAuthProvider, useAuth } from "@/hooks/use-auth";
 import { Sidebar } from '@/components/Sidebar';
-import { ZadarmaWidget } from '@/components/ZadarmaWidget';
 import LoginPage from '@/pages/login';
 import TicketsPage from '@/pages/tickets';
 import CallsPage from '@/pages/calls';
@@ -56,7 +55,6 @@ function Router() {
   return (
     <div className="flex h-screen w-full bg-background">
       <Sidebar />
-      <ZadarmaWidget />
       <Switch>
         <Route path="/">
           {canAccess(['admin', 'operator']) ? (
