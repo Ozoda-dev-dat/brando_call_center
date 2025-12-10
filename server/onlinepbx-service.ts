@@ -37,7 +37,11 @@ class OnlinePBXService {
   private activeCalls: Map<string, OnlinePBXCallData> = new Map();
 
   constructor() {
-    this.domain = process.env.ONLINEPBX_DOMAIN || '';
+    let domain = process.env.ONLINEPBX_DOMAIN || '';
+    if (domain && !domain.includes('.')) {
+      domain = `${domain}.onpbx.ru`;
+    }
+    this.domain = domain;
     this.apiKey = process.env.ONLINEPBX_API_KEY || '';
     this.baseUrl = `https://api2.onlinepbx.ru/${this.domain}`;
   }
