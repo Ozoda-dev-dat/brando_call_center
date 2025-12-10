@@ -44,6 +44,13 @@ A CRM (Customer Relationship Management) system for managing service orders/tick
 - Master: master / MS123
 
 ## Recent Changes
+- 2025-12-10: Fixed OnlinePBX integration errors:
+  - Fixed signature calculation (now uses hex HMAC then base64, matching PHP library)
+  - Corrected API endpoints: `history/search.json` instead of `mongo_history/search.json`
+  - Corrected call endpoint: `call/now.json` instead of `make_call/request.json`
+  - Corrected extensions endpoint: `user/get.json` instead of `sip/list.json`
+  - Fixed date format to RFC-2822 for API requests
+  - Updated auth expiry handling
 - 2025-12-10: Initial Replit setup with database configuration
 
 ## User Preferences

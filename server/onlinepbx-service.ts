@@ -39,11 +39,13 @@ class OnlinePBXService {
     if (domain && !domain.includes('.')) {
       domain = `${domain}.onpbx.ru`;
     }
+    // Remove trailing slash for consistent handling
     if (domain.endsWith('/')) {
       domain = domain.slice(0, -1);
     }
     this.domain = domain;
     this.authKey = process.env.ONLINEPBX_API_KEY || '';
+    // Note: baseUrl does NOT have trailing slash, we add it when making requests
     this.baseUrl = `https://api.onlinepbx.ru/${this.domain}`;
   }
 
@@ -72,7 +74,8 @@ class OnlinePBXService {
       if (data.status === 1 || data.status === '1' || data.status === 'success') {
         this.secretKey = data.data?.key || data.key;
         this.secretKeyId = data.data?.key_id || data.key_id;
-        this.authExpiry = Date.now() + 3600000;
+        // Secret key has a lifespan of 3 days, but we refresh more frequently to be safe
+        this.authExpiry = Date.now() + (24 * 60 * 60 * 1000); // 1 day
         console.log('OnlinePBX: Authentication successful, key_id:', this.secretKeyId);
         return true;
       }
@@ -92,13 +95,18 @@ class OnlinePBXService {
 
     const contentType = 'application/x-www-form-urlencoded';
     const contentMd5 = crypto.createHash('md5').update(body).digest('hex');
+    // URL format must match PHP library: api.onlinepbx.ru/domain/path
     const signUrl = `api.onlinepbx.ru/${this.domain}/${path}`;
     const signData = `${method}\n${contentMd5}\n${contentType}\n${date}\n${signUrl}\n`;
     
-    const signature = crypto
+    // PHP library uses: base64_encode(hash_hmac('sha1', $signData, $this->secretKey, false))
+    // false = hex output, then base64 encode
+    const hexHmac = crypto
       .createHmac('sha1', this.secretKey)
       .update(signData)
-      .digest('base64');
+      .digest('hex');
+    
+    const signature = Buffer.from(hexHmac, 'utf-8').toString('base64');
 
     return signature;
   }
@@ -145,12 +153,14 @@ class OnlinePBXService {
     const from = dateFrom || new Date(Date.now() - 24 * 60 * 60 * 1000);
     const to = dateTo || new Date();
 
+    // OnlinePBX API requires RFC-2822 date format
     const params: Record<string, string> = {
-      date_from: from.toISOString().split('T')[0],
-      date_to: to.toISOString().split('T')[0],
+      date_from: from.toUTCString(),
+      date_to: to.toUTCString(),
     };
 
-    const data = await this.sendRequest('mongo_history/search.json', params);
+    // Use correct endpoint: history/search.json (not mongo_history/search.json)
+    const data = await this.sendRequest('history/search.json', params);
 
     if (data && (data.status === 1 || data.status === '1' || data.status === 'success') && data.data) {
       return data.data;
@@ -166,8 +176,9 @@ class OnlinePBXService {
       to: to,
     };
 
-    const data = await this.sendRequest('make_call/request.json', params);
-    console.log('OnlinePBX make_call response:', JSON.stringify(data));
+    // Use correct endpoint: call/now.json for immediate calls (not make_call/request.json)
+    const data = await this.sendRequest('call/now.json', params);
+    console.log('OnlinePBX call/now response:', JSON.stringify(data));
 
     if (data && (data.status === 1 || data.status === '1' || data.status === 'success')) {
       const callId = data.data?.call_id || data.call_id || `opbx_${Date.now()}`;
@@ -348,7 +359,8 @@ class OnlinePBXService {
   }
 
   async getExtensions(): Promise<any[]> {
-    const data = await this.sendRequest('sip/list.json');
+    // Use correct endpoint: user/get.json for user list (not sip/list.json)
+    const data = await this.sendRequest('user/get.json', {});
     
     if (data && (data.status === 1 || data.status === '1' || data.status === 'success')) {
       return data.data || [];
