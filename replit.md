@@ -9,7 +9,7 @@ This is a CRM system for managing call center operations with features for:
 - Ticket/order management
 - Customer management
 - Reports and dashboard metrics
-- Telephony integration (Zadarma, Twilio)
+- Telephony integration (Zadarma, Twilio, OnlinePBX)
 
 ## Tech Stack
 
@@ -61,6 +61,36 @@ npm run db:push
 - **Admin**: admin / admin2233
 - **Operator**: operator / callcenter123
 - **Master**: master / MS123
+
+## Telephony Integrations
+
+### OnlinePBX Integration
+
+OnlinePBX (panel.onlinepbx.ru) integration allows:
+- Viewing call history from your PBX
+- Real-time incoming call notifications via webhooks
+- Click-to-call functionality
+- Call recording playback
+
+Required environment variables:
+- `ONLINEPBX_DOMAIN` - Your OnlinePBX domain (e.g., yourcompany.onpbx.ru)
+- `ONLINEPBX_API_KEY_ID` - API key ID from OnlinePBX
+- `ONLINEPBX_API_KEY` - API key from OnlinePBX
+
+To get your API credentials:
+1. Log in to https://panel.onlinepbx.ru
+2. Go to Settings > API
+3. Generate new API key
+4. Copy the key_id and key values
+
+Webhook URL for OnlinePBX: `https://your-domain/api/onlinepbx/webhook`
+
+### Zadarma Integration
+
+Required environment variables:
+- `ZADARMA_API_KEY` - Zadarma API key
+- `ZADARMA_API_SECRET` or `ZADARMA_SECRET_KEY` - Zadarma API secret
+- `ZADARMA_SIP` - SIP extension for WebRTC widget
 
 ## Deployment
 

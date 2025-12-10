@@ -6,6 +6,7 @@ import memorystore from "memorystore";
 import { seedUsers } from "./seed";
 import { WebSocket, WebSocketServer } from "ws";
 import { zadarmaService, type IncomingCallData } from "./zadarma-service";
+import { onlinePBXService, type OnlinePBXCallData } from "./onlinepbx-service";
 import { ticketsService } from "./tickets-service";
 import { telegramService } from "./telegram-service";
 
@@ -423,6 +424,180 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error('Error getting Zadarma WebRTC config:', error);
       return res.status(500).json({ message: 'Error getting WebRTC configuration' });
     }
+  });
+
+  // --- OnlinePBX Integration ---
+  app.get('/api/onlinepbx/status', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    return res.json({
+      configured: onlinePBXService.isConfigured(),
+      domain: onlinePBXService.getDomain(),
+    });
+  });
+
+  app.get('/api/onlinepbx/calls', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    const calls = onlinePBXService.listCalls();
+    return res.json(calls);
+  });
+
+  app.get('/api/onlinepbx/history', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
+    try {
+      const { dateFrom, dateTo } = req.query;
+      const from = dateFrom ? new Date(dateFrom as string) : undefined;
+      const to = dateTo ? new Date(dateTo as string) : undefined;
+      
+      const history = await onlinePBXService.getCallHistory(from, to);
+      return res.json(history);
+    } catch (error) {
+      console.error('Error getting OnlinePBX call history:', error);
+      return res.status(500).json({ message: 'Error getting call history' });
+    }
+  });
+
+  app.get('/api/onlinepbx/extensions', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
+    try {
+      const extensions = await onlinePBXService.getExtensions();
+      return res.json(extensions);
+    } catch (error) {
+      console.error('Error getting OnlinePBX extensions:', error);
+      return res.status(500).json({ message: 'Error getting extensions' });
+    }
+  });
+
+  app.post('/api/onlinepbx/call', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
+    try {
+      const { from, to } = req.body;
+      if (!from || !to) {
+        return res.status(400).json({ message: 'from and to are required' });
+      }
+      
+      const callData = await onlinePBXService.initiateCall(from, to);
+      if (!callData) {
+        return res.status(500).json({ message: 'Failed to initiate call. Check OnlinePBX configuration.' });
+      }
+      
+      broadcast({ type: 'onlinepbx_outgoing_call', data: callData });
+      return res.json({ message: 'Call initiated', callData });
+    } catch (error) {
+      console.error('Error initiating OnlinePBX call:', error);
+      return res.status(500).json({ message: 'Error initiating call' });
+    }
+  });
+
+  app.post('/api/onlinepbx/webhook', (req, res) => {
+    try {
+      const params = req.body;
+      const signature = params.signature || req.headers['x-signature'] || '';
+      
+      if (!onlinePBXService.verifyWebhookSignature(params, signature as string)) {
+        console.warn('Invalid OnlinePBX webhook signature');
+        return res.status(403).json({ message: 'Invalid signature' });
+      }
+
+      const event = params.event || params.type;
+      let callData: OnlinePBXCallData | null = null;
+      
+      if (event === 'incoming' || event === 'INCOMING') {
+        callData = onlinePBXService.handleIncomingCallWebhook(params);
+        if (callData) {
+          broadcast({ type: 'onlinepbx_incoming_call', data: callData });
+        }
+      } else {
+        callData = onlinePBXService.handleCallStatusWebhook(params);
+        if (callData) {
+          broadcast({ type: 'onlinepbx_call_status', data: callData });
+        }
+      }
+
+      return res.json({ status: 'ok' });
+    } catch (error) {
+      console.error('Error handling OnlinePBX webhook:', error);
+      return res.status(500).json({ message: 'Error processing webhook' });
+    }
+  });
+
+  app.post('/api/onlinepbx/calls/:callId/accept', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
+    const { callId } = req.params;
+    const callData = onlinePBXService.acceptCall(callId, req.session.userId);
+    
+    if (callData) {
+      broadcast({ type: 'onlinepbx_call_accepted', data: callData });
+    }
+    
+    return res.json({ message: 'Call accepted', callData });
+  });
+
+  app.post('/api/onlinepbx/calls/:callId/reject', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
+    const { callId } = req.params;
+    const callData = onlinePBXService.rejectCall(callId);
+    
+    if (callData) {
+      broadcast({ type: 'onlinepbx_call_rejected', data: callData });
+    }
+    
+    return res.json({ message: 'Call rejected', callData });
+  });
+
+  app.post('/api/onlinepbx/calls/:callId/end', (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin' && req.session.role !== 'operator') {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    
+    const { callId } = req.params;
+    const { duration } = req.body;
+    const callData = onlinePBXService.endCall(callId, duration);
+    
+    if (callData) {
+      broadcast({ type: 'onlinepbx_call_ended', data: callData });
+    }
+    
+    return res.json({ message: 'Call ended', callData });
   });
 
   const httpServer = createServer(app);
