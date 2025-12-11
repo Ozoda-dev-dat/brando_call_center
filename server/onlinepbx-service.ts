@@ -98,12 +98,11 @@ class OnlinePBXService {
     const signUrl = `api.onlinepbx.ru/${this.domain}/${path}`;
     const signData = `${method}\n${contentMd5}\n${contentType}\n${date}\n${signUrl}\n`;
     
-    const hexHmac = crypto
+    // Create HMAC-SHA1 and convert to base64 directly (not from hex string)
+    const signature = crypto
       .createHmac('sha1', this.secretKey)
       .update(signData)
-      .digest('hex');
-    
-    const signature = Buffer.from(hexHmac).toString('base64');
+      .digest('base64');
 
     return signature;
   }
@@ -167,7 +166,7 @@ class OnlinePBXService {
     return [];
   }
 
-  async initiateCall(from: string, to: string): Promise<OnlinePBXCallData | null> {
+  async initiateCall(from: string, to: string): Promise<{ success: boolean; callData?: OnlinePBXCallData; error?: string }> {
     const params: Record<string, string> = {
       from: from,
       to: to,
@@ -177,7 +176,11 @@ class OnlinePBXService {
     const data = await this.sendRequest('call/now.json', params);
     console.log('OnlinePBX call/now response:', JSON.stringify(data));
 
-    if (data && (data.status === 1 || data.status === '1' || data.status === 'success')) {
+    if (!data) {
+      return { success: false, error: 'No response from OnlinePBX API' };
+    }
+
+    if (data.status === 1 || data.status === '1' || data.status === 'success') {
       const callId = data.data?.call_id || data.call_id || `opbx_${Date.now()}`;
       const callData: OnlinePBXCallData = {
         callId,
@@ -190,11 +193,12 @@ class OnlinePBXService {
       };
 
       this.activeCalls.set(callId, callData);
-      return callData;
+      return { success: true, callData };
     }
 
+    const errorMessage = data.comment || data.message || data.error || JSON.stringify(data);
     console.error('OnlinePBX initiate call error:', data);
-    return null;
+    return { success: false, error: errorMessage };
   }
 
   verifyWebhookSignature(params: Record<string, string>, signature: string): boolean {

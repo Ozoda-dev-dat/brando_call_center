@@ -305,14 +305,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!fromExtension || !/^[\d+]+$/.test(fromExtension)) {
         return res.status(400).json({ message: 'Please enter a valid SIP extension number (digits only)' });
       }
-      const callData = await onlinePBXService.initiateCall(fromExtension, phoneNumber);
+      const result = await onlinePBXService.initiateCall(fromExtension, phoneNumber);
       
-      if (!callData) {
-        return res.status(500).json({ message: 'Failed to initiate call via OnlinePBX. Check API credentials.' });
+      if (!result.success) {
+        return res.status(500).json({ message: result.error || 'Failed to initiate call via OnlinePBX' });
       }
       
-      broadcast({ type: 'onlinepbx_outgoing_call', data: callData });
-      return res.json({ message: 'Outgoing call initiated', callData });
+      broadcast({ type: 'onlinepbx_outgoing_call', data: result.callData });
+      return res.json({ message: 'Outgoing call initiated', callData: result.callData });
     } catch (error) {
       console.error('Error initiating outgoing call:', error);
       return res.status(500).json({ message: 'Error initiating call' });
