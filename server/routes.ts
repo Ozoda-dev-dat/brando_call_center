@@ -300,7 +300,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: 'OnlinePBX not configured. Please set API credentials.' });
       }
       
-      const fromExtension = sipExtension || process.env.ONLINEPBX_DEFAULT_SIP || 'default';
+      const fromExtension = sipExtension || process.env.ONLINEPBX_DEFAULT_SIP;
+      
+      if (!fromExtension || !/^[\d+]+$/.test(fromExtension)) {
+        return res.status(400).json({ message: 'Please enter a valid SIP extension number (digits only)' });
+      }
       const callData = await onlinePBXService.initiateCall(fromExtension, phoneNumber);
       
       if (!callData) {
