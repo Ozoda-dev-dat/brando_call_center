@@ -45,8 +45,8 @@ class OnlinePBXService {
     }
     this.domain = domain;
     this.authKey = process.env.ONLINEPBX_API_KEY || '';
-    // Note: baseUrl does NOT have trailing slash, we add it when making requests
-    this.baseUrl = `https://api.onlinepbx.ru/${this.domain}`;
+    // Use the new API endpoint api2.onlinepbx.ru
+    this.baseUrl = `https://api2.onlinepbx.ru/${this.domain}`;
   }
 
   isConfigured(): boolean {
@@ -95,7 +95,7 @@ class OnlinePBXService {
 
     const contentType = 'application/x-www-form-urlencoded';
     const contentMd5 = crypto.createHash('md5').update(body).digest('hex');
-    const signUrl = `api.onlinepbx.ru/${this.domain}/${path}`;
+    const signUrl = `api2.onlinepbx.ru/${this.domain}/${path}`;
     const signData = `${method}\n${contentMd5}\n${contentType}\n${date}\n${signUrl}\n`;
     
     // Create HMAC-SHA1 and convert to base64 directly (not from hex string)
