@@ -94,19 +94,14 @@ class OnlinePBXService {
     }
 
     const contentType = 'application/x-www-form-urlencoded';
-    const contentMd5 = crypto.createHash('md5').update(body).digest('hex');
-    // URL format must match PHP library: api.onlinepbx.ru/domain/path
+    const contentMd5 = crypto.createHash('md5').update(body).digest('base64');
     const signUrl = `api.onlinepbx.ru/${this.domain}/${path}`;
     const signData = `${method}\n${contentMd5}\n${contentType}\n${date}\n${signUrl}\n`;
     
-    // PHP library uses: base64_encode(hash_hmac('sha1', $signData, $this->secretKey, false))
-    // false = hex output, then base64 encode
-    const hexHmac = crypto
+    const signature = crypto
       .createHmac('sha1', this.secretKey)
       .update(signData)
-      .digest('hex');
-    
-    const signature = Buffer.from(hexHmac, 'utf-8').toString('base64');
+      .digest('base64');
 
     return signature;
   }
@@ -127,7 +122,7 @@ class OnlinePBXService {
       const date = new Date().toUTCString();
       const body = new URLSearchParams(params).toString();
       const signature = this.createSignature('POST', path, body, date);
-      const contentMd5 = crypto.createHash('md5').update(body).digest('hex');
+      const contentMd5 = crypto.createHash('md5').update(body).digest('base64');
 
       const response = await fetch(`${this.baseUrl}/${path}`, {
         method: 'POST',
