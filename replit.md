@@ -48,3 +48,23 @@ The app has integration capabilities for:
 - Twilio (call handling)
 - Telegram (notifications)
 - OnlinePBX (call center features)
+- WebRTC/SIP.js (browser-based calling)
+
+## WebRTC Phone Feature
+The CRM includes a built-in WebRTC softphone that allows operators to make and receive calls directly in the browser.
+
+### Configuration
+To use the WebRTC phone, configure these settings in the phone's settings dialog:
+- **WebSocket Server**: Your PBX WebSocket URL (e.g., `wss://pbx.example.com:8089/ws`)
+- **Domain**: Your PBX domain
+- **Extension**: Your SIP extension number
+- **Password**: Your SIP password
+- **STUN Server**: Optional, defaults to Google's STUN server
+
+### Requirements
+- OnlinePBX or compatible PBX must support WebSocket (WSS) connections
+- Browser must have microphone permissions
+- HTTPS is required for WebRTC to work
+
+## Recent Changes
+- Added WebRTC softphone component for browser-based calling (December 2025)

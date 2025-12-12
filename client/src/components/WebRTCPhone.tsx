@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { UserAgent, Registerer, Inviter, Invitation, SessionState, RegistererState } from 'sip.js';
+import { UserAgent, Registerer, Inviter, Invitation, SessionState, RegistererState, SessionDescriptionHandler } from 'sip.js';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,6 @@ import {
   Volume2, 
   VolumeX,
   Settings,
-  X,
   Delete
 } from 'lucide-react';
 import {
@@ -32,6 +31,7 @@ interface SIPConfig {
   username: string;
   password: string;
   domain: string;
+  stunServer: string;
 }
 
 type CallState = 'idle' | 'calling' | 'ringing' | 'connected' | 'incoming';
@@ -42,12 +42,19 @@ export function WebRTCPhone() {
     const saved = localStorage.getItem('sip_config');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return {
+          server: parsed.server || '',
+          username: parsed.username || '',
+          password: parsed.password || '',
+          domain: parsed.domain || '',
+          stunServer: parsed.stunServer || 'stun:stun.l.google.com:19302',
+        };
       } catch {
-        return { server: '', username: '', password: '', domain: '' };
+        return { server: '', username: '', password: '', domain: '', stunServer: 'stun:stun.l.google.com:19302' };
       }
     }
-    return { server: '', username: '', password: '', domain: '' };
+    return { server: '', username: '', password: '', domain: '', stunServer: 'stun:stun.l.google.com:19302' };
   });
   
   const [isConnected, setIsConnected] = useState(false);
@@ -64,6 +71,7 @@ export function WebRTCPhone() {
   const userAgentRef = useRef<UserAgent | null>(null);
   const registererRef = useRef<Registerer | null>(null);
   const sessionRef = useRef<Inviter | Invitation | null>(null);
+  const localStreamRef = useRef<MediaStream | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -77,11 +85,43 @@ export function WebRTCPhone() {
       clearInterval(callTimerRef.current);
       callTimerRef.current = null;
     }
+    
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(track => track.stop());
+      localStreamRef.current = null;
+    }
+    
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current.srcObject = null;
+    }
+    
     sessionRef.current = null;
     setCallState('idle');
     setCallDuration(0);
     setIncomingCallerNumber('');
     setIsMuted(false);
+  }, []);
+
+  const getLocalStream = useCallback(async (): Promise<MediaStream> => {
+    if (localStreamRef.current) {
+      return localStreamRef.current;
+    }
+    
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+        video: false,
+      });
+      localStreamRef.current = stream;
+      return stream;
+    } catch (error) {
+      console.error('Failed to get local audio:', error);
+      throw new Error('Mikrofonga ruxsat berilmadi');
+    }
   }, []);
 
   const setupRemoteMedia = useCallback((session: Inviter | Invitation) => {
@@ -91,6 +131,18 @@ export function WebRTCPhone() {
     const peerConnection = (sessionDescriptionHandler as any).peerConnection as RTCPeerConnection;
     if (!peerConnection) return;
 
+    peerConnection.ontrack = (event) => {
+      if (event.track.kind === 'audio') {
+        if (!remoteAudioRef.current) {
+          remoteAudioRef.current = new Audio();
+          remoteAudioRef.current.autoplay = true;
+        }
+        const stream = new MediaStream([event.track]);
+        remoteAudioRef.current.srcObject = stream;
+        remoteAudioRef.current.play().catch(console.error);
+      }
+    };
+
     peerConnection.getReceivers().forEach((receiver) => {
       if (receiver.track && receiver.track.kind === 'audio') {
         if (!remoteAudioRef.current) {
@@ -99,6 +151,7 @@ export function WebRTCPhone() {
         }
         const stream = new MediaStream([receiver.track]);
         remoteAudioRef.current.srcObject = stream;
+        remoteAudioRef.current.play().catch(console.error);
       }
     });
   }, []);
@@ -145,6 +198,11 @@ export function WebRTCPhone() {
       const uri = UserAgent.makeURI(`sip:${config.username}@${config.domain}`);
       if (!uri) throw new Error('Invalid SIP URI');
 
+      const iceServers: RTCIceServer[] = [];
+      if (config.stunServer) {
+        iceServers.push({ urls: config.stunServer });
+      }
+
       const transportOptions = {
         server: config.server.startsWith('wss://') ? config.server : `wss://${config.server}`,
       };
@@ -155,6 +213,11 @@ export function WebRTCPhone() {
         authorizationUsername: config.username,
         authorizationPassword: config.password,
         displayName: config.username,
+        sessionDescriptionHandlerFactoryOptions: {
+          peerConnectionConfiguration: {
+            iceServers,
+          },
+        },
         delegate: {
           onInvite: handleIncomingCall,
         },
@@ -243,17 +306,31 @@ export function WebRTCPhone() {
     }
 
     try {
+      const localStream = await getLocalStream();
+      
       const target = UserAgent.makeURI(`sip:${phoneNumber}@${config.domain}`);
       if (!target) throw new Error('Invalid phone number');
 
-      const inviter = new Inviter(userAgentRef.current, target, {
+      const iceServers: RTCIceServer[] = [];
+      if (config.stunServer) {
+        iceServers.push({ urls: config.stunServer });
+      }
+
+      const inviterOptions = {
         sessionDescriptionHandlerOptions: {
           constraints: {
             audio: true,
             video: false,
           },
         },
-      });
+        sessionDescriptionHandlerModifiers: [
+          (description: RTCSessionDescriptionInit) => {
+            return Promise.resolve(description);
+          }
+        ],
+      };
+
+      const inviter = new Inviter(userAgentRef.current, target, inviterOptions);
 
       sessionRef.current = inviter;
 
@@ -261,6 +338,20 @@ export function WebRTCPhone() {
         switch (state) {
           case SessionState.Establishing:
             setCallState('calling');
+            
+            const sdh = inviter.sessionDescriptionHandler;
+            if (sdh) {
+              const pc = (sdh as any).peerConnection as RTCPeerConnection;
+              if (pc && localStream) {
+                const senders = pc.getSenders();
+                const hasAudioSender = senders.some(s => s.track?.kind === 'audio');
+                if (!hasAudioSender) {
+                  localStream.getAudioTracks().forEach(track => {
+                    pc.addTrack(track, localStream);
+                  });
+                }
+              }
+            }
             break;
           case SessionState.Established:
             setCallState('connected');
@@ -275,7 +366,30 @@ export function WebRTCPhone() {
         }
       });
 
-      await inviter.invite();
+      await inviter.invite({
+        requestDelegate: {
+          onProgress: () => {
+            setCallState('ringing');
+          },
+        },
+      });
+      
+      setTimeout(() => {
+        const sdh = inviter.sessionDescriptionHandler;
+        if (sdh && localStream) {
+          const pc = (sdh as any).peerConnection as RTCPeerConnection;
+          if (pc) {
+            const senders = pc.getSenders();
+            const hasAudioSender = senders.some(s => s.track?.kind === 'audio');
+            if (!hasAudioSender) {
+              localStream.getAudioTracks().forEach(track => {
+                pc.addTrack(track, localStream);
+              });
+            }
+          }
+        }
+      }, 100);
+      
     } catch (error) {
       console.error('Call error:', error);
       toast({
@@ -285,13 +399,17 @@ export function WebRTCPhone() {
       });
       cleanupSession();
     }
-  }, [config.domain, isRegistered, phoneNumber, cleanupSession, setupRemoteMedia, toast]);
+  }, [config.domain, config.stunServer, isRegistered, phoneNumber, cleanupSession, setupRemoteMedia, toast, getLocalStream]);
 
   const answerCall = useCallback(async () => {
     if (!sessionRef.current || !(sessionRef.current instanceof Invitation)) return;
 
     try {
-      await sessionRef.current.accept({
+      const localStream = await getLocalStream();
+      
+      const invitation = sessionRef.current;
+      
+      await invitation.accept({
         sessionDescriptionHandlerOptions: {
           constraints: {
             audio: true,
@@ -299,15 +417,32 @@ export function WebRTCPhone() {
           },
         },
       });
+
+      setTimeout(() => {
+        const sdh = invitation.sessionDescriptionHandler;
+        if (sdh && localStream) {
+          const pc = (sdh as any).peerConnection as RTCPeerConnection;
+          if (pc) {
+            const senders = pc.getSenders();
+            const hasAudioSender = senders.some(s => s.track?.kind === 'audio');
+            if (!hasAudioSender) {
+              localStream.getAudioTracks().forEach(track => {
+                pc.addTrack(track, localStream);
+              });
+            }
+          }
+        }
+      }, 100);
+      
     } catch (error) {
       console.error('Answer error:', error);
       toast({
         title: 'Xato',
-        description: 'Qo\'ng\'iroqqa javob berib bo\'lmadi',
+        description: error instanceof Error ? error.message : 'Qo\'ng\'iroqqa javob berib bo\'lmadi',
         variant: 'destructive',
       });
     }
-  }, [toast]);
+  }, [toast, getLocalStream]);
 
   const rejectCall = useCallback(() => {
     if (!sessionRef.current || !(sessionRef.current instanceof Invitation)) return;
@@ -339,18 +474,10 @@ export function WebRTCPhone() {
   }, [cleanupSession]);
 
   const toggleMute = useCallback(() => {
-    if (!sessionRef.current) return;
+    if (!localStreamRef.current) return;
 
-    const sessionDescriptionHandler = sessionRef.current.sessionDescriptionHandler;
-    if (!sessionDescriptionHandler) return;
-
-    const peerConnection = (sessionDescriptionHandler as any).peerConnection as RTCPeerConnection;
-    if (!peerConnection) return;
-
-    peerConnection.getSenders().forEach((sender) => {
-      if (sender.track && sender.track.kind === 'audio') {
-        sender.track.enabled = isMuted;
-      }
+    localStreamRef.current.getAudioTracks().forEach((track) => {
+      track.enabled = isMuted;
     });
 
     setIsMuted(!isMuted);
@@ -377,6 +504,9 @@ export function WebRTCPhone() {
     return () => {
       if (callTimerRef.current) {
         clearInterval(callTimerRef.current);
+      }
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(track => track.stop());
       }
       disconnect();
     };
@@ -443,6 +573,14 @@ export function WebRTCPhone() {
                       placeholder="SIP parol"
                       value={config.password}
                       onChange={(e) => saveConfig({ ...config, password: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>STUN Server (ixtiyoriy)</Label>
+                    <Input
+                      placeholder="stun:stun.l.google.com:19302"
+                      value={config.stunServer}
+                      onChange={(e) => saveConfig({ ...config, stunServer: e.target.value })}
                     />
                   </div>
                   <Button 
