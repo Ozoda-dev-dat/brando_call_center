@@ -8,6 +8,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
+import { WebRTCPhone } from './WebRTCPhone';
 
 interface CallRecord {
   callId: string;
@@ -294,14 +295,18 @@ export function CallsPanel() {
         <p className="text-sm text-gray-500">Kiruvchi va chiquvchi qo'ng'iroqlarni boshqaring</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-1">
+          <WebRTCPhone />
+        </div>
+
         <Card className="lg:col-span-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <PhoneOutgoing className="w-5 h-5" />
-              Qo'ng'iroq qilish
+              OnlinePBX orqali qo'ng'iroq
             </CardTitle>
-            <CardDescription>Telefon raqamini kiriting yoki terish tugmalaridan foydalaning</CardDescription>
+            <CardDescription>Telefon raqamini kiriting (SIP telefon orqali)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
