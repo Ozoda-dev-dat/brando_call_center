@@ -1,0 +1,87 @@
+
+> rest-express@1.0.0 dev
+> cross-env NODE_ENV=development node -r dotenv/config --import tsx server/index-dev.ts
+
+User already exists: admin
+User already exists: operator
+User already exists: master
+User seeding completed successfully
+11:56:31 PM [express] serving on port 5000
+
+A PostCSS plugin did not pass the `from` option to `postcss.parse`. This may cause imported assets to be incorrectly transformed. If you've recently added a PostCSS plugin that raised this warning, please contact the package author to fix the issue.
+11:57:05 PM [express] GET /api/onlinepbx/status 401 in 1ms :: {"message":"Authentication required"}
+11:58:55 PM [express] POST /api/auth/login 401 in 18ms :: {"message":"Login yoki parol xato"}
+11:59:02 PM [express] POST /api/auth/login 200 in 19ms :: {"id":"ec4bd7cc-2471-4bcd-8a2f-7eb244bb161e…
+11:59:02 PM [express] GET /api/tickets 304 in 5ms :: []
+11:59:04 PM [express] GET /api/onlinepbx/status 200 in 1ms :: {"configured":true,"domain":"pbx15099.o…
+11:59:04 PM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+OnlinePBX: Authenticating...
+WS client connected: user=ec4bd7cc-2471-4bcd-8a2f-7eb244bb161e, role=admin
+OnlinePBX auth response: {"status":"1","data":{"key":"4cf42975a9735a48a50c7d98a0e0a238819b455a02367dc1bf4a76d95de14a44d88e2fa2bf972990","key_id":"2e6a416947cdb550183bb6fc0f12aca17c7dea15ae51486f579243c61b8cdf08","new":0}}
+OnlinePBX: Authentication successful, key_id: 2e6a416947cdb550183bb6fc0f12aca17c7dea15ae51486f579243c61b8cdf08
+OnlinePBX call history error: {
+  status: '0',
+  comment: 'not authorized: hash compare error',
+  isNotAuth: true,
+  errorCode: 'API_KEY_CHECK_FAILED'
+}
+11:59:08 PM [express] GET /api/onlinepbx/history 304 in 3629ms :: []
+11:59:09 PM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+11:59:14 PM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+OnlinePBX call/now response: {"status":"0","comment":"not authorized: hash compare error","isNotAuth":true,"errorCode":"API_KEY_CHECK_FAILED"}
+OnlinePBX initiate call error: {
+  status: '0',
+  comment: 'not authorized: hash compare error',
+  isNotAuth: true,
+  errorCode: 'API_KEY_CHECK_FAILED'
+}
+11:59:19 PM [express] POST /api/calls/outgoing 500 in 1714ms :: {"message":"not authorized: hash comp…
+11:59:20 PM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+11:59:25 PM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+11:59:30 PM [express] GET /api/onlinepbx/calls 304 in 2ms :: []
+OnlinePBX call/now response: {"status":"0","comment":"not authorized: hash compare error","isNotAuth":true,"errorCode":"API_KEY_CHECK_FAILED"}
+OnlinePBX initiate call error: {
+  status: '0',
+  comment: 'not authorized: hash compare error',
+  isNotAuth: true,
+  errorCode: 'API_KEY_CHECK_FAILED'
+}
+11:59:33 PM [express] POST /api/calls/outgoing 500 in 1654ms :: {"message":"not authorized: hash comp…
+11:59:36 PM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+OnlinePBX call history error: {
+  status: '0',
+  comment: 'not authorized: hash compare error',
+  isNotAuth: true,
+  errorCode: 'API_KEY_CHECK_FAILED'
+}
+11:59:39 PM [express] GET /api/onlinepbx/history 304 in 1341ms :: []
+11:59:41 PM [express] GET /api/onlinepbx/calls 304 in 0ms :: []
+11:59:47 PM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+11:59:52 PM [express] GET /api/onlinepbx/calls 304 in 0ms :: []
+11:59:57 PM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+12:00:03 AM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+12:00:09 AM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+OnlinePBX call history error: {
+  status: '0',
+  comment: 'not authorized: hash compare error',
+  isNotAuth: true,
+  errorCode: 'API_KEY_CHECK_FAILED'
+}
+12:00:11 AM [express] GET /api/onlinepbx/history 304 in 922ms :: []
+12:00:14 AM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+12:00:19 AM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+12:00:25 AM [express] GET /api/onlinepbx/calls 304 in 0ms :: []
+12:00:30 AM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+12:00:35 AM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+12:00:41 AM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+OnlinePBX call history error: {
+  status: '0',
+  comment: 'not authorized: hash compare error',
+  isNotAuth: true,
+  errorCode: 'API_KEY_CHECK_FAILED'
+}
+12:00:43 AM [express] GET /api/onlinepbx/history 304 in 1729ms :: []
+12:00:46 AM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+12:00:52 AM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+12:00:57 AM [express] GET /api/onlinepbx/calls 304 in 1ms :: []
+12:01:02 AM [express] GET /api/onlinepbx/calls 304 in 1ms :: []

@@ -88,25 +88,6 @@ class OnlinePBXService {
     }
   }
 
-  private createSignature(method: string, path: string, body: string, date: string): string {
-    if (!this.secretKey) {
-      throw new Error('No secret key available');
-    }
-
-    const contentType = 'application/x-www-form-urlencoded';
-    const contentMd5 = crypto.createHash('md5').update(body).digest('hex');
-    const signUrl = `api2.onlinepbx.ru/${this.domain}/${path}`;
-    const signData = `${method}\n${contentMd5}\n${contentType}\n${date}\n${signUrl}\n`;
-    
-    // Create HMAC-SHA1 and convert to base64 directly (not from hex string)
-    const signature = crypto
-      .createHmac('sha1', this.secretKey)
-      .update(signData)
-      .digest('base64');
-
-    return signature;
-  }
-
   private async sendRequest(path: string, params: Record<string, string> = {}): Promise<any> {
     if (!this.isConfigured()) {
       console.error('OnlinePBX not configured');
@@ -120,19 +101,14 @@ class OnlinePBXService {
     }
 
     try {
-      const date = new Date().toUTCString();
       const body = new URLSearchParams(params).toString();
-      const signature = this.createSignature('POST', path, body, date);
-      const contentMd5 = crypto.createHash('md5').update(body).digest('hex');
 
       const response = await fetch(`${this.baseUrl}/${path}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Accept': 'application/json',
-          'Date': date,
-          'Content-MD5': contentMd5,
-          'x-pbx-authentication': `${this.secretKeyId}:${signature}`,
+          'x-pbx-authentication': `${this.secretKeyId}:${this.secretKey}`,
         },
         body: body,
       });
