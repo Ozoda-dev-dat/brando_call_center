@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, User, Hash, PhoneCall, Delete } from 'lucide-react';
+import { Phone, PhoneIncoming, PhoneOutgoing, PhoneMissed, Clock, User, Hash, PhoneCall, Delete, Headphones, Activity } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -64,19 +64,19 @@ function getStatusIcon(status: string, direction?: string) {
 
 function getStatusBadge(status: string, direction?: string) {
   if (direction === 'outgoing' || status === 'outgoing') {
-    return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Chiquvchi</Badge>;
+    return <Badge className="bg-gradient-to-r from-green-400 to-emerald-500 text-white border-0">Chiquvchi</Badge>;
   }
   switch (status) {
     case 'incoming':
-      return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Kiruvchi</Badge>;
+      return <Badge className="bg-gradient-to-r from-blue-400 to-indigo-500 text-white border-0">Kiruvchi</Badge>;
     case 'accepted':
-      return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Qabul qilindi</Badge>;
+      return <Badge className="bg-gradient-to-r from-green-400 to-emerald-500 text-white border-0">Qabul qilindi</Badge>;
     case 'ended':
       return <Badge variant="outline" className="bg-gray-50 text-gray-700 border-gray-200">Tugatildi</Badge>;
     case 'rejected':
-      return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Rad etildi</Badge>;
+      return <Badge className="bg-gradient-to-r from-red-400 to-rose-500 text-white border-0">Rad etildi</Badge>;
     case 'missed':
-      return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">O'tkazib yuborildi</Badge>;
+      return <Badge className="bg-gradient-to-r from-orange-400 to-amber-500 text-white border-0">O'tkazib yuborildi</Badge>;
     default:
       return <Badge variant="outline">{status}</Badge>;
   }
@@ -289,36 +289,90 @@ export function CallsPanel() {
   ];
 
   return (
-    <div className="flex-1 p-6 bg-gray-50 overflow-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-900">Qo'ng'iroqlar</h1>
-        <p className="text-sm text-gray-500">Kiruvchi va chiquvchi qo'ng'iroqlarni boshqaring</p>
+    <div className="flex-1 p-6 bg-gradient-to-br from-slate-50 to-indigo-50/30 overflow-auto">
+      <div className="mb-6 slide-up">
+        <div className="flex items-center gap-3 mb-1">
+          <div className="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center">
+            <Headphones className="w-5 h-5 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Qo'ng'iroqlar</h1>
+        </div>
+        <p className="text-sm text-gray-500 ml-[52px]">Kiruvchi va chiquvchi qo'ng'iroqlarni boshqaring</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 fade-in">
+        <Card className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Jami Qo'ng'iroqlar</p>
+              <p className="text-3xl font-bold text-gray-900">{callHistory.length}</p>
+            </div>
+            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+              <Phone className="w-6 h-6 text-blue-600" />
+            </div>
+          </div>
+        </Card>
+        <Card className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Kiruvchi</p>
+              <p className="text-3xl font-bold text-green-600">{callHistory.filter(c => c.direction === 'incoming').length}</p>
+            </div>
+            <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+              <PhoneIncoming className="w-6 h-6 text-green-600" />
+            </div>
+          </div>
+        </Card>
+        <Card className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">Chiquvchi</p>
+              <p className="text-3xl font-bold text-purple-600">{callHistory.filter(c => c.direction === 'outgoing').length}</p>
+            </div>
+            <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+              <PhoneOutgoing className="w-6 h-6 text-purple-600" />
+            </div>
+          </div>
+        </Card>
+        <Card className="stat-card">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-1">O'tkazib yuborilgan</p>
+              <p className="text-3xl font-bold text-orange-600">{callHistory.filter(c => c.status === 'missed').length}</p>
+            </div>
+            <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+              <PhoneMissed className="w-6 h-6 text-orange-600" />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 fade-in">
         <div className="lg:col-span-1">
           <WebRTCPhone />
         </div>
 
-        <Card className="lg:col-span-1">
-          <CardHeader>
+        <Card className="lg:col-span-1 glass-card border-0 shadow-lg overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-green-500 to-emerald-600 text-white">
             <CardTitle className="flex items-center gap-2">
               <PhoneOutgoing className="w-5 h-5" />
               OnlinePBX orqali qo'ng'iroq
             </CardTitle>
-            <CardDescription>Telefon raqamini kiriting (SIP telefon orqali)</CardDescription>
+            <CardDescription className="text-green-100">Telefon raqamini kiriting</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <div className="space-y-4">
               {!onlinepbxStatus?.configured && (
-                <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-700 text-sm">
-                  OnlinePBX sozlanmagan. Qo'ng'iroq qilish uchun API kalitlarini sozlang.
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-sm flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  OnlinePBX sozlanmagan
                 </div>
               )}
               
               {onlinepbxStatus?.configured && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-                  OnlinePBX ulangan: {onlinepbxStatus.domain}
+                <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-center gap-2">
+                  <Activity className="w-4 h-4" />
+                  {onlinepbxStatus.domain}
                 </div>
               )}
               
@@ -328,9 +382,9 @@ export function CallsPanel() {
                   placeholder="+998 90 123 45 67"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="text-lg text-center font-mono"
+                  className="text-lg text-center font-mono search-input"
                 />
-                <Button variant="ghost" size="icon" onClick={handleBackspace}>
+                <Button variant="ghost" size="icon" onClick={handleBackspace} className="hover:bg-red-50 hover:text-red-600">
                   <Delete className="w-5 h-5" />
                 </Button>
               </div>
@@ -340,7 +394,7 @@ export function CallsPanel() {
                 placeholder="SIP raqami (ixtiyoriy)"
                 value={sipExtension}
                 onChange={(e) => setSipExtension(e.target.value)}
-                className="text-sm"
+                className="text-sm search-input"
               />
 
               <div className="grid grid-cols-3 gap-2">
@@ -349,7 +403,7 @@ export function CallsPanel() {
                     <Button
                       key={`${rowIndex}-${digit}`}
                       variant="outline"
-                      className="h-14 text-xl font-semibold"
+                      className="h-12 text-xl font-semibold action-button hover:bg-blue-50 hover:border-blue-300"
                       onClick={() => handleDialerInput(digit)}
                     >
                       {digit}
@@ -359,7 +413,7 @@ export function CallsPanel() {
               </div>
 
               <Button
-                className="w-full h-14 text-lg gap-2 bg-green-600 hover:bg-green-700"
+                className="w-full h-12 text-lg gap-2 action-button bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 shadow-lg"
                 onClick={handleCall}
                 disabled={!onlinepbxStatus?.configured}
               >
@@ -370,23 +424,23 @@ export function CallsPanel() {
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader>
+        <Card className="lg:col-span-2 glass-card border-0 shadow-lg overflow-hidden">
+          <CardHeader className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
             <CardTitle>Qo'ng'iroqlar tarixi</CardTitle>
-            <CardDescription>
+            <CardDescription className="text-blue-100">
               So'nggi qo'ng'iroqlar ro'yxati
               {onlinepbxStatus?.configured && (
-                <span className="ml-2 text-green-600">• OnlinePBX ulangan ({onlinepbxStatus.domain})</span>
+                <span className="ml-2">• OnlinePBX ulangan</span>
               )}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <Tabs defaultValue="all">
-              <TabsList className="mb-4">
-                <TabsTrigger value="all">Barchasi</TabsTrigger>
-                <TabsTrigger value="incoming">Kiruvchi</TabsTrigger>
-                <TabsTrigger value="outgoing">Chiquvchi</TabsTrigger>
-                <TabsTrigger value="missed">O'tkazib yuborilgan</TabsTrigger>
+              <TabsList className="mb-4 bg-gray-100/80 p-1 rounded-xl">
+                <TabsTrigger value="all" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Barchasi</TabsTrigger>
+                <TabsTrigger value="incoming" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Kiruvchi</TabsTrigger>
+                <TabsTrigger value="outgoing" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">Chiquvchi</TabsTrigger>
+                <TabsTrigger value="missed" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">O'tkazib yuborilgan</TabsTrigger>
               </TabsList>
 
               <TabsContent value="all">
@@ -407,46 +461,46 @@ export function CallsPanel() {
       </div>
 
       {incomingCalls.length > 0 && (
-        <Card className="mt-6 border-blue-200 bg-blue-50">
-          <CardHeader>
+        <Card className="mt-6 border-2 border-blue-300 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-xl scale-in overflow-hidden">
+          <CardHeader className="bg-blue-500/10">
             <CardTitle className="flex items-center gap-2 text-blue-700">
               <PhoneIncoming className="w-5 h-5 animate-pulse" />
               Faol kiruvchi qo'ng'iroqlar ({incomingCalls.length})
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <div className="space-y-3">
               {incomingCalls.map((call) => (
                 <div
                   key={call.callId}
-                  className="flex items-center justify-between p-4 bg-white rounded-lg border border-blue-200 shadow-sm"
+                  className="flex items-center justify-between p-4 bg-white rounded-xl border border-blue-200 shadow-sm list-item"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                      <PhoneIncoming className="w-6 h-6 text-blue-600 animate-pulse" />
+                    <div className="w-14 h-14 rounded-full gradient-bg flex items-center justify-center shadow-lg">
+                      <PhoneIncoming className="w-7 h-7 text-white animate-pulse" />
                     </div>
                     <div>
-                      <p className="font-semibold text-gray-900">{call.from}</p>
+                      <p className="font-bold text-gray-900 text-lg">{call.from}</p>
                       <p className="text-sm text-gray-500">
                         {formatTime(call.timestamp)}
                       </p>
                     </div>
                   </div>
-                  <div className="flex gap-2 items-center">
-                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                  <div className="flex gap-3 items-center">
+                    <Badge className="bg-purple-100 text-purple-700 border-purple-200">
                       OnlinePBX
                     </Badge>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100"
+                      className="bg-red-50 text-red-600 border-red-200 hover:bg-red-100 action-button"
                       onClick={() => handleRejectCall(call.callId)}
                     >
                       Rad etish
                     </Button>
                     <Button
                       size="sm"
-                      className="bg-green-600 hover:bg-green-700"
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white border-0 shadow-md action-button"
                       onClick={() => handleAcceptCall(call.callId)}
                     >
                       Qabul qilish
@@ -465,37 +519,41 @@ export function CallsPanel() {
 function CallList({ calls }: { calls: CallRecord[] }) {
   if (calls.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        <Phone className="w-12 h-12 mx-auto mb-3 opacity-50" />
-        <p>Qo'ng'iroqlar mavjud emas</p>
+      <div className="text-center py-12">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Phone className="w-8 h-8 text-gray-400" />
+        </div>
+        <p className="text-gray-500 font-medium">Qo'ng'iroqlar mavjud emas</p>
+        <p className="text-gray-400 text-sm mt-1">Qo'ng'iroqlar tarixi bu yerda ko'rsatiladi</p>
       </div>
     );
   }
 
   return (
-    <ScrollArea className="h-[400px]">
+    <ScrollArea className="h-[350px]">
       <div className="space-y-2">
-        {calls.map((call) => (
+        {calls.map((call, index) => (
           <div
             key={call.callId}
-            className="flex items-center justify-between p-3 bg-white rounded-lg border hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-between p-3 bg-white rounded-xl border hover:border-blue-200 hover:shadow-md transition-all duration-200"
+            style={{ animationDelay: `${index * 30}ms` }}
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center border">
                 {getStatusIcon(call.status, call.direction)}
               </div>
               <div>
-                <p className="font-medium text-gray-900">
+                <p className="font-semibold text-gray-900">
                   {call.direction === 'outgoing' || call.status === 'outgoing' ? call.to : call.from}
                 </p>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <span>{formatDate(call.timestamp)}</span>
-                  <span>•</span>
+                  <span className="text-gray-300">•</span>
                   <span>{formatTime(call.timestamp)}</span>
                   {call.duration !== undefined && call.duration > 0 && (
                     <>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
+                      <span className="text-gray-300">•</span>
+                      <span className="flex items-center gap-1 text-blue-600">
                         <Clock className="w-3 h-3" />
                         {formatDuration(call.duration)}
                       </span>
@@ -505,9 +563,6 @@ function CallList({ calls }: { calls: CallRecord[] }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                OnlinePBX
-              </Badge>
               {getStatusBadge(call.status, call.direction)}
             </div>
           </div>
