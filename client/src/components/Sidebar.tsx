@@ -1,18 +1,18 @@
-import { FileText, Users, MapPin, UserCheck, LayoutDashboard, Settings, FileBarChart, LogOut, Phone } from 'lucide-react';
+import { FileText, Users, MapPin, UserCheck, LayoutDashboard, Settings, FileBarChart, LogOut, Phone, Headphones } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from './ui/button';
 
 const menuItems = [
-  { id: 'tickets', label: 'Buyurtmalar', icon: FileText, path: '/', roles: ['admin', 'operator'] },
-  { id: 'calls', label: "Qo'ng'iroqlar", icon: Phone, path: '/calls', roles: ['admin', 'operator'] },
-  { id: 'customers', label: 'Mijozlar', icon: Users, path: '/customers', roles: ['admin', 'operator'] },
-  { id: 'service-centers', label: 'Xizmat Markazlari', icon: MapPin, path: '/service-centers', roles: ['admin', 'operator'] },
-  { id: 'masters', label: 'Ustalar', icon: UserCheck, path: '/masters', roles: ['admin', 'operator', 'master'] },
-  { id: 'dashboard', label: 'Boshqaruv Paneli', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'operator'] },
-  { id: 'reports', label: 'Hisobotlar', icon: FileBarChart, path: '/reports', roles: ['admin', 'operator'] },
-  { id: 'admin', label: 'Admin', icon: Settings, path: '/admin', roles: ['admin'] }
+  { id: 'tickets', label: 'Buyurtmalar', icon: FileText, path: '/', roles: ['admin', 'operator'], color: 'blue' },
+  { id: 'calls', label: "Qo'ng'iroqlar", icon: Phone, path: '/calls', roles: ['admin', 'operator'], color: 'green' },
+  { id: 'customers', label: 'Mijozlar', icon: Users, path: '/customers', roles: ['admin', 'operator'], color: 'purple' },
+  { id: 'service-centers', label: 'Xizmat Markazlari', icon: MapPin, path: '/service-centers', roles: ['admin', 'operator'], color: 'orange' },
+  { id: 'masters', label: 'Ustalar', icon: UserCheck, path: '/masters', roles: ['admin', 'operator', 'master'], color: 'cyan' },
+  { id: 'dashboard', label: 'Boshqaruv Paneli', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'operator'], color: 'indigo' },
+  { id: 'reports', label: 'Hisobotlar', icon: FileBarChart, path: '/reports', roles: ['admin', 'operator'], color: 'pink' },
+  { id: 'admin', label: 'Admin', icon: Settings, path: '/admin', roles: ['admin'], color: 'red' }
 ];
 
 export function Sidebar() {
@@ -32,19 +32,23 @@ export function Sidebar() {
   );
 
   return (
-    <div className="w-60 bg-white border-r border-gray-200 h-screen flex flex-col">
-      <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-1">
-          <h1 className="text-xl font-semibold text-gray-900">Brando CRM</h1>
-          <ThemeToggle />
+    <div className="w-64 bg-gradient-to-b from-slate-900 to-slate-800 h-screen flex flex-col shadow-xl">
+      <div className="p-6 border-b border-white/10">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center shadow-lg">
+            <Headphones className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-white">Brando CRM</h1>
+            <p className="text-xs text-slate-400">Qo'ng'iroqlar Markazi</p>
+          </div>
         </div>
-        <p className="text-xs text-gray-500">Qo'ng'iroqlar Markazi</p>
       </div>
       
-      <nav className="flex-1 p-4 space-y-1">
-        {visibleMenuItems.map((item) => {
+      <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        {visibleMenuItems.map((item, index) => {
           const Icon = item.icon;
-          const isActive = location === item.path;
+          const isActive = location === item.path || (item.path === '/' && location === '/tickets');
           
           return (
             <Link
@@ -53,29 +57,43 @@ export function Sidebar() {
               data-testid={`link-nav-${item.id}`}
             >
               <div
-                className={`flex items-center gap-3 h-10 px-3 rounded-md transition-colors cursor-pointer ${
+                className={`flex items-center gap-3 h-11 px-4 rounded-xl transition-all duration-200 cursor-pointer group ${
                   isActive 
-                    ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-600 rounded-l-none' 
-                    : 'text-gray-600 hover:bg-gray-50'
+                    ? 'bg-white/15 text-white shadow-lg' 
+                    : 'text-slate-400 hover:bg-white/10 hover:text-white'
                 }`}
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
-                <Icon className="w-5 h-5" />
+                <div className={`p-1.5 rounded-lg transition-all duration-200 ${
+                  isActive ? 'bg-white/20' : 'group-hover:bg-white/10'
+                }`}>
+                  <Icon className="w-4 h-4" />
+                </div>
                 <span className="text-sm font-medium">{item.label}</span>
+                {isActive && (
+                  <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+                )}
               </div>
             </Link>
           );
         })}
       </nav>
       
-      <div className="p-4 border-t border-gray-200">
-        <div className="mb-3" data-testid="user-info">
-          <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
-          <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+      <div className="p-4 border-t border-white/10">
+        <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-white/5">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+            {user?.fullName?.charAt(0) || 'U'}
+          </div>
+          <div className="flex-1 min-w-0" data-testid="user-info">
+            <p className="text-sm font-medium text-white truncate">{user?.fullName}</p>
+            <p className="text-xs text-slate-400 capitalize">{user?.role}</p>
+          </div>
+          <ThemeToggle />
         </div>
         <Button 
-          variant="outline" 
+          variant="ghost" 
           size="sm" 
-          className="w-full gap-2" 
+          className="w-full gap-2 text-slate-400 hover:text-white hover:bg-red-500/20 transition-all duration-200" 
           onClick={handleLogout}
           data-testid="button-logout"
         >

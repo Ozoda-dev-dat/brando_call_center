@@ -1,6 +1,6 @@
-import { TrendingUp, Users, FileText, DollarSign, Star, AlertTriangle } from 'lucide-react';
+import { TrendingUp, TrendingDown, Users, FileText, DollarSign, Star, AlertTriangle, Clock, CheckCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { mockReports, mockMasters, mockTickets, mockFraudAlerts } from '@/data/mockData';
+import { mockReports, mockMasters, mockFraudAlerts } from '@/data/mockData';
 import {
   Bar,
   BarChart,
@@ -11,7 +11,9 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  Legend
+  Legend,
+  Area,
+  AreaChart
 } from 'recharts';
 
 const weeklyData = [
@@ -24,189 +26,237 @@ const weeklyData = [
   { day: 'Yak', tickets: 48, completed: 41, revenue: 8900 }
 ];
 
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  subtitle: string;
+  icon: React.ReactNode;
+  trend?: { value: number; positive: boolean };
+  color: string;
+}
+
+function StatCard({ title, value, subtitle, icon, trend, color }: StatCardProps) {
+  return (
+    <div className="stat-card slide-up">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-2">{title}</p>
+          <p className="text-3xl font-bold text-foreground mb-1">{value}</p>
+          <p className="text-sm text-muted-foreground">{subtitle}</p>
+        </div>
+        <div className={`p-3 rounded-xl ${color}`}>
+          {icon}
+        </div>
+      </div>
+      {trend && (
+        <div className="flex items-center gap-1.5 mt-4 pt-4 border-t">
+          {trend.positive ? (
+            <TrendingUp className="w-4 h-4 text-green-500" />
+          ) : (
+            <TrendingDown className="w-4 h-4 text-red-500" />
+          )}
+          <span className={`text-sm font-medium ${trend.positive ? 'text-green-500' : 'text-red-500'}`}>
+            {trend.positive ? '+' : ''}{trend.value}%
+          </span>
+          <span className="text-sm text-muted-foreground">oldingi kunga nisbatan</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DashboardPanel() {
   const latestReport = mockReports[0];
   const totalActiveMasters = mockMasters.filter(m => m.status === 'active' || m.status === 'busy').length;
   const avgHonestyScore = Math.round(mockMasters.reduce((acc, m) => acc + m.honestyScore, 0) / mockMasters.length);
+  const completionRate = Math.round((latestReport.completedTickets / latestReport.totalTickets) * 100);
 
   return (
-    <div className="flex-1 bg-gray-50 overflow-auto">
-      <div className="p-6 border-b border-gray-200 bg-white">
-        <h1 className="text-2xl font-semibold text-gray-900">Boshqaruv Paneli</h1>
-        <p className="text-sm text-gray-500 mt-1">Umumiy ko'rsatkichlar va tahlil</p>
+    <div className="flex-1 bg-gradient-to-br from-background to-muted/30 overflow-auto">
+      <div className="page-header">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="page-title text-2xl font-bold">Boshqaruv Paneli</h1>
+            <p className="text-sm text-muted-foreground mt-1">Umumiy ko'rsatkichlar va tahlil</p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="w-4 h-4" />
+            {new Date().toLocaleDateString('uz-UZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </div>
+        </div>
       </div>
 
-      <div className="p-6">
-        <div className="grid grid-cols-4 gap-6 mb-6">
-          <Card className="p-6 bg-white">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Bugungi Buyurtmalar</p>
-              <FileText className="w-5 h-5 text-blue-600" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900" data-testid="metric-total-tickets">
-              {latestReport.totalTickets}
-            </p>
-            <div className="flex items-center gap-1 mt-2 text-sm">
-              <TrendingUp className="w-4 h-4 text-green-600" />
-              <span className="text-green-600 font-medium">+8.2%</span>
-              <span className="text-gray-500">oldingi kunga nisbatan</span>
-            </div>
-          </Card>
-
-          <Card className="p-6 bg-white">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Tugatilgan</p>
-              <Users className="w-5 h-5 text-green-600" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900" data-testid="metric-completed-tickets">
-              {latestReport.completedTickets}
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              {Math.round((latestReport.completedTickets / latestReport.totalTickets) * 100)}% bajarilish darajasi
-            </p>
-          </Card>
-
-          <Card className="p-6 bg-white">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Bugungi Daromad</p>
-              <DollarSign className="w-5 h-5 text-yellow-600" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900" data-testid="metric-revenue">
-              {(latestReport.revenue / 1000000).toFixed(1)}M
-            </p>
-            <p className="text-sm text-gray-500 mt-2">
-              {latestReport.revenue.toLocaleString('uz-UZ')} so'm
-            </p>
-          </Card>
-
-          <Card className="p-6 bg-white">
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Mijoz Qoniqishi</p>
-              <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
-            </div>
-            <p className="text-3xl font-bold text-gray-900" data-testid="metric-satisfaction">
-              {latestReport.customerSatisfaction.toFixed(1)}
-            </p>
-            <p className="text-sm text-gray-500 mt-2">5 dan</p>
-          </Card>
+      <div className="p-6 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <StatCard
+            title="Bugungi Buyurtmalar"
+            value={latestReport.totalTickets}
+            subtitle={`${completionRate}% bajarildi`}
+            icon={<FileText className="w-6 h-6 text-white" />}
+            trend={{ value: 8.2, positive: true }}
+            color="bg-gradient-to-br from-blue-500 to-blue-600"
+          />
+          <StatCard
+            title="Tugatilgan"
+            value={latestReport.completedTickets}
+            subtitle={`${latestReport.totalTickets - latestReport.completedTickets} ta jarayonda`}
+            icon={<CheckCircle className="w-6 h-6 text-white" />}
+            trend={{ value: 12.5, positive: true }}
+            color="bg-gradient-to-br from-green-500 to-green-600"
+          />
+          <StatCard
+            title="Bugungi Daromad"
+            value={`${(latestReport.revenue / 1000000).toFixed(1)}M`}
+            subtitle={`${latestReport.revenue.toLocaleString('uz-UZ')} so'm`}
+            icon={<DollarSign className="w-6 h-6 text-white" />}
+            trend={{ value: 5.3, positive: true }}
+            color="bg-gradient-to-br from-amber-500 to-orange-500"
+          />
+          <StatCard
+            title="Mijoz Qoniqishi"
+            value={latestReport.customerSatisfaction.toFixed(1)}
+            subtitle="5 dan o'rtacha ball"
+            icon={<Star className="w-6 h-6 text-white" />}
+            trend={{ value: 2.1, positive: true }}
+            color="bg-gradient-to-br from-purple-500 to-pink-500"
+          />
         </div>
 
-        <div className="grid grid-cols-2 gap-6 mb-6">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Haftalik Buyurtmalar</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="p-6 slide-up" style={{ animationDelay: '0.1s' }}>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              Haftalik Buyurtmalar
+            </h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={weeklyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="day" tick={{ fill: '#6b7280', fontSize: 12 }} />
-                <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="day" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: '#fff', 
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px'
+                    backgroundColor: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                   }} 
                 />
                 <Legend />
-                <Bar dataKey="tickets" fill="#3b82f6" name="Buyurtmalar" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="completed" fill="#10b981" name="Tugatilgan" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="tickets" fill="hsl(217 91% 60%)" name="Buyurtmalar" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="completed" fill="hsl(142 71% 45%)" name="Tugatilgan" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </Card>
 
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Haftalik Daromad (ming so'm)</h3>
+          <Card className="p-6 slide-up" style={{ animationDelay: '0.2s' }}>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-amber-500" />
+              Haftalik Daromad
+            </h3>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={weeklyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="day" tick={{ fill: '#6b7280', fontSize: 12 }} />
-                <YAxis tick={{ fill: '#6b7280', fontSize: 12 }} />
+              <AreaChart data={weeklyData}>
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(38 92% 50%)" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="hsl(38 92% 50%)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="day" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
+                <YAxis tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
                 <Tooltip 
                   contentStyle={{ 
-                    backgroundColor: '#fff', 
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px'
+                    backgroundColor: 'hsl(var(--card))', 
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                   }} 
                 />
-                <Legend />
-                <Line 
+                <Area 
                   type="monotone" 
                   dataKey="revenue" 
-                  stroke="#f59e0b" 
+                  stroke="hsl(38 92% 50%)" 
                   strokeWidth={3}
-                  name="Daromad"
-                  dot={{ fill: '#f59e0b', r: 5 }}
+                  fill="url(#revenueGradient)"
+                  name="Daromad (ming so'm)"
                 />
-              </LineChart>
+              </AreaChart>
             </ResponsiveContainer>
           </Card>
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Usta Ko'rsatkichlari</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="p-6 slide-up" style={{ animationDelay: '0.3s' }}>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-500" />
+              Usta Ko'rsatkichlari
+            </h3>
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Jami ustalar</span>
-                <span className="text-2xl font-bold text-gray-900">{mockMasters.length}</span>
+              <div className="flex justify-between items-center p-3 rounded-lg bg-muted/50">
+                <span className="text-sm text-muted-foreground">Jami ustalar</span>
+                <span className="text-2xl font-bold">{mockMasters.length}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">Faol ustalar</span>
+              <div className="flex justify-between items-center p-3 rounded-lg bg-green-500/10">
+                <span className="text-sm text-green-600">Faol ustalar</span>
                 <span className="text-2xl font-bold text-green-600">{totalActiveMasters}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-600">O'rtacha haliqlik</span>
-                <span className="text-2xl font-bold text-blue-600">{avgHonestyScore}</span>
+              <div className="flex justify-between items-center p-3 rounded-lg bg-blue-500/10">
+                <span className="text-sm text-blue-600">O'rtacha halollik</span>
+                <span className="text-2xl font-bold text-blue-600">{avgHonestyScore}%</span>
               </div>
             </div>
           </Card>
 
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Vaqt Ko'rsatkichlari</h3>
-            <div className="space-y-4">
+          <Card className="p-6 slide-up" style={{ animationDelay: '0.4s' }}>
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-purple-500" />
+              Vaqt Ko'rsatkichlari
+            </h3>
+            <div className="space-y-5">
               <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">O'rtacha javob vaqti</span>
-                  <span className="font-medium text-gray-900">{latestReport.avgResponseTime} daq</span>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-muted-foreground">O'rtacha javob vaqti</span>
+                  <span className="font-semibold">{latestReport.avgResponseTime} daq</span>
                 </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-3 bg-muted rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-blue-600 rounded-full" 
+                    className="h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-500" 
                     style={{ width: `${(30 - latestReport.avgResponseTime) / 30 * 100}%` }}
-                  ></div>
+                  />
                 </div>
               </div>
               <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-600">O'rtacha bajarish vaqti</span>
-                  <span className="font-medium text-gray-900">{latestReport.avgCompletionTime} daq</span>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-muted-foreground">O'rtacha bajarish vaqti</span>
+                  <span className="font-semibold">{latestReport.avgCompletionTime} daq</span>
                 </div>
-                <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-3 bg-muted rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-green-600 rounded-full" 
+                    className="h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-500" 
                     style={{ width: `${(120 - latestReport.avgCompletionTime) / 120 * 100}%` }}
-                  ></div>
+                  />
                 </div>
               </div>
             </div>
           </Card>
 
-          <Card className="p-6 bg-red-50 border-2 border-red-500" data-testid="card-critical-alerts">
-            <h3 className="text-lg font-semibold text-red-900 mb-4 flex items-center gap-2">
+          <Card className="p-6 bg-gradient-to-br from-red-500/10 to-orange-500/10 border-red-200 dark:border-red-800 slide-up" style={{ animationDelay: '0.5s' }} data-testid="card-critical-alerts">
+            <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-4 flex items-center gap-2">
               <AlertTriangle className="w-5 h-5" />
               Diqqat Talab Etadi
             </h3>
             <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-red-700">Firibgarlik ogohlantirishlari</span>
-                <span className="text-2xl font-bold text-red-700">{mockFraudAlerts.length}</span>
+              <div className="flex justify-between items-center p-3 rounded-lg bg-red-500/10">
+                <span className="text-sm text-red-600 dark:text-red-400">Firibgarlik ogohlantirishlari</span>
+                <span className="text-2xl font-bold text-red-600 dark:text-red-400">{mockFraudAlerts.length}</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-red-700">SLA buzilishlari</span>
-                <span className="text-2xl font-bold text-red-700">3</span>
+              <div className="flex justify-between items-center p-3 rounded-lg bg-orange-500/10">
+                <span className="text-sm text-orange-600 dark:text-orange-400">SLA buzilishlari</span>
+                <span className="text-2xl font-bold text-orange-600 dark:text-orange-400">3</span>
               </div>
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-red-700">Hal qilinmagan muammolar</span>
-                <span className="text-2xl font-bold text-red-700">2</span>
+              <div className="flex justify-between items-center p-3 rounded-lg bg-amber-500/10">
+                <span className="text-sm text-amber-600 dark:text-amber-400">Hal qilinmagan</span>
+                <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">2</span>
               </div>
             </div>
           </Card>
