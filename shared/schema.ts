@@ -30,16 +30,34 @@ export const masters = pgTable("masters", {
   name: text("name"),
   phone: text("phone"),
   telegramId: bigint("telegram_id", { mode: "number" }),
-  createdAt: timestamp("created_at").defaultNow(),
+  region: text("region"),
+  masterLat: text("master_lat"),
+  baseLng: text("base_lng"),
+  lastLat: text("last_lat"),
+  lastLng: text("last_lng"),
+  lastLocationUpdate: timestamp("last_location_update", { withTimezone: true }),
 });
 
 export const insertMasterSchema = createInsertSchema(masters).omit({
   id: true,
-  createdAt: true,
 });
 
 export type InsertMaster = z.infer<typeof insertMasterSchema>;
 export type Master = typeof masters.$inferSelect;
+
+export const clients = pgTable("clients", {
+  id: serial("id").primaryKey(),
+  name: text("name"),
+  phone: text("phone"),
+  address: text("address"),
+});
+
+export const insertClientSchema = createInsertSchema(clients).omit({
+  id: true,
+});
+
+export type InsertClient = z.infer<typeof insertClientSchema>;
+export type Client = typeof clients.$inferSelect;
 
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),

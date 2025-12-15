@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool, neonConfig } from "@neondatabase/serverless";
-import { users, orders, type User, type InsertUser, type Order, type InsertOrder } from "@shared/schema";
+import { users, orders, masters, clients, type User, type InsertUser, type Order, type InsertOrder, type Master, type InsertMaster, type Client, type InsertClient } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 import ws from "ws";
 
@@ -21,6 +21,18 @@ export interface IStorage {
   updateOrderStatus(id: number, status: string): Promise<Order | undefined>;
   listOrders(): Promise<Order[]>;
   deleteOrder(id: number): Promise<void>;
+
+  listMasters(): Promise<Master[]>;
+  getMaster(id: number): Promise<Master | undefined>;
+  createMaster(master: InsertMaster): Promise<Master>;
+  updateMaster(id: number, updates: Partial<InsertMaster>): Promise<Master | undefined>;
+  deleteMaster(id: number): Promise<void>;
+
+  listClients(): Promise<Client[]>;
+  getClient(id: number): Promise<Client | undefined>;
+  createClient(client: InsertClient): Promise<Client>;
+  updateClient(id: number, updates: Partial<InsertClient>): Promise<Client | undefined>;
+  deleteClient(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -69,6 +81,52 @@ export class DatabaseStorage implements IStorage {
 
   async deleteOrder(id: number): Promise<void> {
     await db.delete(orders).where(eq(orders.id, id));
+  }
+
+  async listMasters(): Promise<Master[]> {
+    return await db.select().from(masters);
+  }
+
+  async getMaster(id: number): Promise<Master | undefined> {
+    const result = await db.select().from(masters).where(eq(masters.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createMaster(insertMaster: InsertMaster): Promise<Master> {
+    const result = await db.insert(masters).values(insertMaster as any).returning();
+    return result[0];
+  }
+
+  async updateMaster(id: number, updates: Partial<InsertMaster>): Promise<Master | undefined> {
+    const result = await db.update(masters).set(updates as any).where(eq(masters.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteMaster(id: number): Promise<void> {
+    await db.delete(masters).where(eq(masters.id, id));
+  }
+
+  async listClients(): Promise<Client[]> {
+    return await db.select().from(clients);
+  }
+
+  async getClient(id: number): Promise<Client | undefined> {
+    const result = await db.select().from(clients).where(eq(clients.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createClient(insertClient: InsertClient): Promise<Client> {
+    const result = await db.insert(clients).values(insertClient as any).returning();
+    return result[0];
+  }
+
+  async updateClient(id: number, updates: Partial<InsertClient>): Promise<Client | undefined> {
+    const result = await db.update(clients).set(updates as any).where(eq(clients.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteClient(id: number): Promise<void> {
+    await db.delete(clients).where(eq(clients.id, id));
   }
 }
 

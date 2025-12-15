@@ -231,6 +231,186 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- Masters endpoints ---
+  app.get('/api/masters', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const mastersList = await storage.listMasters();
+      return res.json(mastersList);
+    } catch (error: any) {
+      console.error('Error listing masters:', error?.message || error);
+      return res.status(500).json({ message: 'Error listing masters' });
+    }
+  });
+
+  app.get('/api/masters/:id', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      const master = await storage.getMaster(id);
+      if (!master) {
+        return res.status(404).json({ message: 'Master not found' });
+      }
+      return res.json(master);
+    } catch (error) {
+      console.error('Error getting master', error);
+      return res.status(500).json({ message: 'Error getting master' });
+    }
+  });
+
+  app.post('/api/masters', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admin can create masters' });
+    }
+    try {
+      const master = await storage.createMaster(req.body);
+      return res.json(master);
+    } catch (error) {
+      console.error('Error creating master', error);
+      return res.status(500).json({ message: 'Error creating master' });
+    }
+  });
+
+  app.patch('/api/masters/:id', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admin can update masters' });
+    }
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      const master = await storage.updateMaster(id, req.body);
+      if (!master) {
+        return res.status(404).json({ message: 'Master not found' });
+      }
+      return res.json(master);
+    } catch (error) {
+      console.error('Error updating master', error);
+      return res.status(500).json({ message: 'Error updating master' });
+    }
+  });
+
+  app.delete('/api/masters/:id', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admin can delete masters' });
+    }
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      await storage.deleteMaster(id);
+      return res.json({ message: 'Master deleted' });
+    } catch (error) {
+      console.error('Error deleting master', error);
+      return res.status(500).json({ message: 'Error deleting master' });
+    }
+  });
+
+  // --- Clients endpoints ---
+  app.get('/api/clients', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const clientsList = await storage.listClients();
+      return res.json(clientsList);
+    } catch (error: any) {
+      console.error('Error listing clients:', error?.message || error);
+      return res.status(500).json({ message: 'Error listing clients' });
+    }
+  });
+
+  app.get('/api/clients/:id', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      const client = await storage.getClient(id);
+      if (!client) {
+        return res.status(404).json({ message: 'Client not found' });
+      }
+      return res.json(client);
+    } catch (error) {
+      console.error('Error getting client', error);
+      return res.status(500).json({ message: 'Error getting client' });
+    }
+  });
+
+  app.post('/api/clients', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const client = await storage.createClient(req.body);
+      return res.json(client);
+    } catch (error) {
+      console.error('Error creating client', error);
+      return res.status(500).json({ message: 'Error creating client' });
+    }
+  });
+
+  app.patch('/api/clients/:id', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      const client = await storage.updateClient(id, req.body);
+      if (!client) {
+        return res.status(404).json({ message: 'Client not found' });
+      }
+      return res.json(client);
+    } catch (error) {
+      console.error('Error updating client', error);
+      return res.status(500).json({ message: 'Error updating client' });
+    }
+  });
+
+  app.delete('/api/clients/:id', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    if (req.session.role !== 'admin') {
+      return res.status(403).json({ message: 'Only admin can delete clients' });
+    }
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      await storage.deleteClient(id);
+      return res.json({ message: 'Client deleted' });
+    } catch (error) {
+      console.error('Error deleting client', error);
+      return res.status(500).json({ message: 'Error deleting client' });
+    }
+  });
+
   // --- Telegram webhook for callback queries ---
   app.post('/api/telegram/webhook', async (req, res) => {
     try {
