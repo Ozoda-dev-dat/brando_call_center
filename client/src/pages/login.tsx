@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { LogIn, AlertCircle, Phone, Headphones, Users } from 'lucide-react';
+import { LogIn, AlertCircle, Factory, Wrench, ClipboardList, Users, Cog } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -32,40 +32,43 @@ export default function LoginPage() {
         <div className="absolute inset-0 bg-black/20" />
         <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
           <div className="slide-up">
-            <h1 className="text-5xl font-bold mb-6">Brando CRM</h1>
+            <div className="flex items-center gap-4 mb-6">
+              <Factory className="w-14 h-14" />
+              <h1 className="text-5xl font-bold">Zavod CRM</h1>
+            </div>
             <p className="text-xl text-white/90 mb-12 max-w-md">
-              Qo'ng'iroqlar markazini boshqarish uchun zamonaviy yechim
+              Ishlab chiqarish va xizmat ko'rsatishni boshqarish tizimi
             </p>
           </div>
           
           <div className="grid grid-cols-1 gap-6 w-full max-w-sm">
             <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-xl p-4 slide-up" style={{animationDelay: '0.1s'}}>
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <Phone className="w-6 h-6" />
+                <ClipboardList className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-semibold">Smart Qo'ng'iroqlar</h3>
-                <p className="text-sm text-white/70">Real-time qo'ng'iroq boshqaruvi</p>
+                <h3 className="font-semibold">Buyurtmalar Nazorati</h3>
+                <p className="text-sm text-white/70">Ishlab chiqarish buyurtmalari</p>
               </div>
             </div>
             
             <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-xl p-4 slide-up" style={{animationDelay: '0.2s'}}>
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <Users className="w-6 h-6" />
+                <Wrench className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-semibold">Mijozlar Bazasi</h3>
-                <p className="text-sm text-white/70">Barcha mijozlar bir joyda</p>
+                <h3 className="font-semibold">Ustalar va Texniklar</h3>
+                <p className="text-sm text-white/70">Ishchi kuchini boshqarish</p>
               </div>
             </div>
             
             <div className="flex items-center gap-4 bg-white/10 backdrop-blur-sm rounded-xl p-4 slide-up" style={{animationDelay: '0.3s'}}>
               <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                <Headphones className="w-6 h-6" />
+                <Cog className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-semibold">Ustalar Boshqaruvi</h3>
-                <p className="text-sm text-white/70">Buyurtmalarni taqsimlash</p>
+                <h3 className="font-semibold">Texnik Xizmat</h3>
+                <p className="text-sm text-white/70">Ta'mirlash va xizmat ko'rsatish</p>
               </div>
             </div>
           </div>
@@ -80,10 +83,10 @@ export default function LoginPage() {
           <div className="text-center mb-8">
             <div className="lg:hidden mb-4">
               <div className="w-16 h-16 gradient-bg rounded-2xl mx-auto flex items-center justify-center mb-4">
-                <Headphones className="w-8 h-8 text-white" />
+                <Factory className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold gradient-text mb-2">Xush kelibsiz</h1>
+            <h1 className="text-3xl font-bold gradient-text mb-2">Zavod CRM</h1>
             <p className="text-sm text-muted-foreground">Tizimga kirish uchun ma'lumotlarni kiriting</p>
           </div>
 
@@ -152,23 +155,23 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => { setUsername('admin'); setPassword('admin2233'); }}
-                className="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors text-center"
+                className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800/40 hover:bg-slate-200 dark:hover:bg-slate-800/60 transition-colors text-center"
               >
-                <p className="text-xs font-semibold text-blue-600 dark:text-blue-400">Admin</p>
+                <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">Direktor</p>
               </button>
               <button
                 type="button"
                 onClick={() => { setUsername('operator'); setPassword('callcenter123'); }}
-                className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/40 transition-colors text-center"
+                className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors text-center"
               >
-                <p className="text-xs font-semibold text-green-600 dark:text-green-400">Operator</p>
+                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400">Dispetcher</p>
               </button>
               <button
                 type="button"
                 onClick={() => { setUsername('master'); setPassword('MS123'); }}
                 className="p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors text-center"
               >
-                <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">Usta</p>
+                <p className="text-xs font-semibold text-orange-600 dark:text-orange-400">Texnik</p>
               </button>
             </div>
           </div>

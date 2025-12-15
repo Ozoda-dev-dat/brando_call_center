@@ -177,11 +177,11 @@
 
 @layer components {
   .gradient-bg {
-    background: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(250 91% 65%) 50%, hsl(280 80% 60%) 100%);
+    background: linear-gradient(135deg, hsl(210 25% 25%) 0%, hsl(210 30% 35%) 50%, hsl(25 90% 50%) 100%);
   }
 
   .gradient-text {
-    background: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(250 91% 65%) 100%);
+    background: linear-gradient(135deg, hsl(210 30% 35%) 0%, hsl(25 90% 50%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -213,7 +213,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: linear-gradient(90deg, hsl(217 91% 60%), hsl(250 91% 65%));
+    background: linear-gradient(90deg, hsl(210 30% 35%), hsl(25 90% 50%));
     opacity: 0;
     transition: opacity 0.3s ease;
   }

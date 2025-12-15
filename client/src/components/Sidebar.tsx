@@ -1,4 +1,4 @@
-import { FileText, Users, MapPin, UserCheck, LayoutDashboard, Settings, FileBarChart, LogOut, Phone, Headphones } from 'lucide-react';
+import { FileText, Users, MapPin, UserCheck, LayoutDashboard, Settings, FileBarChart, LogOut, Phone, Factory, Wrench, Building2 } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '@/hooks/use-auth';
@@ -8,11 +8,11 @@ const menuItems = [
   { id: 'tickets', label: 'Buyurtmalar', icon: FileText, path: '/', roles: ['admin', 'operator'], color: 'blue' },
   { id: 'calls', label: "Qo'ng'iroqlar", icon: Phone, path: '/calls', roles: ['admin', 'operator'], color: 'green' },
   { id: 'customers', label: 'Mijozlar', icon: Users, path: '/customers', roles: ['admin', 'operator'], color: 'purple' },
-  { id: 'service-centers', label: 'Xizmat Markazlari', icon: MapPin, path: '/service-centers', roles: ['admin', 'operator'], color: 'orange' },
-  { id: 'masters', label: 'Ustalar', icon: UserCheck, path: '/masters', roles: ['admin', 'operator', 'master'], color: 'cyan' },
+  { id: 'service-centers', label: 'Ishlab Chiqarish Sexlari', icon: Building2, path: '/service-centers', roles: ['admin', 'operator'], color: 'orange' },
+  { id: 'masters', label: 'Texniklar', icon: Wrench, path: '/masters', roles: ['admin', 'operator', 'master'], color: 'cyan' },
   { id: 'dashboard', label: 'Boshqaruv Paneli', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'operator'], color: 'indigo' },
   { id: 'reports', label: 'Hisobotlar', icon: FileBarChart, path: '/reports', roles: ['admin', 'operator'], color: 'pink' },
-  { id: 'admin', label: 'Admin', icon: Settings, path: '/admin', roles: ['admin'], color: 'red' }
+  { id: 'admin', label: 'Sozlamalar', icon: Settings, path: '/admin', roles: ['admin'], color: 'red' }
 ];
 
 export function Sidebar() {
@@ -36,11 +36,11 @@ export function Sidebar() {
       <div className="p-6 border-b border-white/10">
         <div className="flex items-center gap-3 mb-2">
           <div className="w-10 h-10 gradient-bg rounded-xl flex items-center justify-center shadow-lg">
-            <Headphones className="w-5 h-5 text-white" />
+            <Factory className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">Brando CRM</h1>
-            <p className="text-xs text-slate-400">Qo'ng'iroqlar Markazi</p>
+            <h1 className="text-lg font-bold text-white">Zavod CRM</h1>
+            <p className="text-xs text-slate-400">Ishlab Chiqarish Tizimi</p>
           </div>
         </div>
       </div>
@@ -81,7 +81,7 @@ export function Sidebar() {
       
       <div className="p-4 border-t border-white/10">
         <div className="flex items-center gap-3 mb-4 p-3 rounded-xl bg-white/5">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-600 to-orange-500 flex items-center justify-center text-white font-semibold text-sm">
             {user?.fullName?.charAt(0) || 'U'}
           </div>
           <div className="flex-1 min-w-0" data-testid="user-info">
