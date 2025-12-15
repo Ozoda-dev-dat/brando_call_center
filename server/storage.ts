@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool, neonConfig } from "@neondatabase/serverless";
 import { users, orders, masters, clients, type User, type InsertUser, type Order, type InsertOrder, type Master, type InsertMaster, type Client, type InsertClient } from "@shared/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, sql, or, ilike } from "drizzle-orm";
 import ws from "ws";
 
 neonConfig.webSocketConstructor = ws;
@@ -127,6 +127,27 @@ export class DatabaseStorage implements IStorage {
 
   async deleteClient(id: number): Promise<void> {
     await db.delete(clients).where(eq(clients.id, id));
+  }
+
+  async getCustomersFromOrders(search: string = ''): Promise<{ name: string | null; phone: string | null }[]> {
+    const baseQuery = db
+      .selectDistinct({
+        name: orders.clientName,
+        phone: orders.clientPhone,
+      })
+      .from(orders);
+
+    if (search.trim()) {
+      const searchPattern = `%${search.trim()}%`;
+      return await baseQuery.where(
+        or(
+          ilike(orders.clientName, searchPattern),
+          ilike(orders.clientPhone, searchPattern)
+        )
+      );
+    }
+
+    return await baseQuery;
   }
 }
 

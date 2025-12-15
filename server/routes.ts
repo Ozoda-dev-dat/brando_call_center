@@ -338,6 +338,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- Customers from orders (unique client_name and client_phone) ---
+  app.get('/api/customers', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const search = (req.query.search as string) || '';
+      const customers = await storage.getCustomersFromOrders(search);
+      return res.json(customers);
+    } catch (error: any) {
+      console.error('Error listing customers:', error?.message || error);
+      return res.status(500).json({ message: 'Error listing customers' });
+    }
+  });
+
   app.get('/api/clients/:id', async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'Authentication required' });
