@@ -338,6 +338,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // --- Dashboard Statistics endpoint ---
+  app.get('/api/stats', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const orders = await ticketsService.list();
+      const masters = await storage.listMasters();
+      
+      const totalOrders = orders.length;
+      const completedOrders = orders.filter(o => o.status === 'delivered' || o.status === 'completed').length;
+      const newOrders = orders.filter(o => o.status === 'new').length;
+      const inProgressOrders = orders.filter(o => o.status === 'in_progress' || o.status === 'on_way').length;
+      
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayOrders = orders.filter(o => new Date(o.createdAt) >= today);
+      const todayTotal = todayOrders.length;
+      const todayCompleted = todayOrders.filter(o => o.status === 'delivered' || o.status === 'completed').length;
+      
+      const activeMasters = masters.length;
+      
+      return res.json({
+        totalOrders,
+        completedOrders,
+        newOrders,
+        inProgressOrders,
+        todayTotal,
+        todayCompleted,
+        activeMasters,
+        orders,
+        masters
+      });
+    } catch (error: any) {
+      console.error('Error getting stats:', error?.message || error);
+      return res.status(500).json({ message: 'Error getting stats' });
+    }
+  });
+
   // --- Customers from orders (unique client_name and client_phone) ---
   app.get('/api/customers', async (req, res) => {
     if (!req.session.userId) {
