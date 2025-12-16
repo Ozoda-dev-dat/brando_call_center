@@ -105,13 +105,18 @@ export function DashboardPanel() {
 
   return (
     <div className="flex-1 bg-gradient-to-br from-background to-muted/30 overflow-auto">
-      <div className="page-header">
+      <div className="page-header bg-gradient-to-r from-slate-800 via-slate-700 to-orange-600 text-white">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="page-title text-2xl font-bold">Boshqaruv Paneli</h1>
-            <p className="text-sm text-muted-foreground mt-1">Haqiqiy ma'lumotlar asosida</p>
+            <div className="flex items-center gap-3 mb-1">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-white">Boshqaruv Paneli</h1>
+            </div>
+            <p className="text-sm text-white/80 ml-[60px]">Haqiqiy ma'lumotlar asosida</p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm text-white/80 bg-white/10 px-4 py-2 rounded-lg">
             <Clock className="w-4 h-4" />
             {new Date().toLocaleDateString('uz-UZ', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </div>
