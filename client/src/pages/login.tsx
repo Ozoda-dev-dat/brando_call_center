@@ -30,8 +30,8 @@ export default function LoginPage() {
     <div className="min-h-screen w-full flex bg-slate-950">
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
         <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,_rgba(185,28,28,0.15),transparent_50%)]" />
-          <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_right,_rgba(185,28,28,0.1),transparent_50%)]" />
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,_rgba(153,27,27,0.2),transparent_50%)]" />
+          <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_right,_rgba(153,27,27,0.15),transparent_50%)]" />
         </div>
         
         <div className="relative z-10 flex flex-col justify-center items-center w-full p-12">
@@ -40,13 +40,13 @@ export default function LoginPage() {
             <h2 className="text-2xl font-light text-white/80 tracking-wide">
               CallCenter CRM
             </h2>
-            <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-red-600 to-transparent mx-auto mt-6" />
+            <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-red-800 to-transparent mx-auto mt-6" />
           </div>
           
           <div className="grid grid-cols-1 gap-4 w-full max-w-sm">
             <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10 slide-up hover:bg-white/10 transition-all duration-300" style={{animationDelay: '0.1s'}}>
-              <div className="w-12 h-12 bg-red-600/20 rounded-lg flex items-center justify-center">
-                <Phone className="w-5 h-5 text-red-500" />
+              <div className="w-12 h-12 bg-red-800/20 rounded-lg flex items-center justify-center">
+                <Phone className="w-5 h-5 text-red-700" />
               </div>
               <div>
                 <h3 className="font-medium text-white">Qo'ng'iroqlar Boshqaruvi</h3>
@@ -55,8 +55,8 @@ export default function LoginPage() {
             </div>
             
             <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10 slide-up hover:bg-white/10 transition-all duration-300" style={{animationDelay: '0.2s'}}>
-              <div className="w-12 h-12 bg-red-600/20 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-red-500" />
+              <div className="w-12 h-12 bg-red-800/20 rounded-lg flex items-center justify-center">
+                <Users className="w-5 h-5 text-red-700" />
               </div>
               <div>
                 <h3 className="font-medium text-white">Mijozlar Bazasi</h3>
@@ -65,8 +65,8 @@ export default function LoginPage() {
             </div>
             
             <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10 slide-up hover:bg-white/10 transition-all duration-300" style={{animationDelay: '0.3s'}}>
-              <div className="w-12 h-12 bg-red-600/20 rounded-lg flex items-center justify-center">
-                <Headphones className="w-5 h-5 text-red-500" />
+              <div className="w-12 h-12 bg-red-800/20 rounded-lg flex items-center justify-center">
+                <Headphones className="w-5 h-5 text-red-700" />
               </div>
               <div>
                 <h3 className="font-medium text-white">Operator Paneli</h3>
@@ -103,7 +103,7 @@ export default function LoginPage() {
                   placeholder="Loginni kiriting"
                   required
                   disabled={isLoading}
-                  className="h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-red-600 focus:ring-red-600/20"
+                  className="h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-red-800 focus:ring-red-800/20"
                   data-testid="input-username"
                 />
               </div>
@@ -120,7 +120,7 @@ export default function LoginPage() {
                   placeholder="Parolni kiriting"
                   required
                   disabled={isLoading}
-                  className="h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-red-600 focus:ring-red-600/20"
+                  className="h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-red-800 focus:ring-red-800/20"
                   data-testid="input-password"
                 />
               </div>
@@ -134,7 +134,7 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full h-12 gap-2 text-base font-medium bg-red-600 hover:bg-red-700 text-white border-0 transition-all duration-200"
+                className="w-full h-12 gap-2 text-base font-medium bg-red-800 hover:bg-red-900 text-white border-0 transition-all duration-200"
                 disabled={isLoading}
                 data-testid="button-login"
               >
