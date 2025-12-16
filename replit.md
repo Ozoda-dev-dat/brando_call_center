@@ -1,7 +1,7 @@
-# Zavod CRM
+# Brando CallCenter CRM
 
 ## Overview
-A CRM (Customer Relationship Management) system for manufacturing/service operations. The application is built with React frontend and Express backend, using PostgreSQL database.
+A professional CallCenter CRM system for managing customer calls, tickets, and service operations. Features a modern dark theme with the Brando brand identity.
 
 ## Tech Stack
 - **Frontend**: React with TypeScript, TailwindCSS, Radix UI components
@@ -28,6 +28,7 @@ A CRM (Customer Relationship Management) system for manufacturing/service operat
 │   └── index-prod.ts    # Production server entry
 ├── shared/           # Shared types and schemas
 │   └── schema.ts        # Drizzle database schema
+├── attached_assets/  # Brand assets (logos, images)
 └── package.json
 ```
 
@@ -45,8 +46,17 @@ Production build creates:
 - Frontend static files in `dist/public/`
 - Server bundle in `dist/index.js`
 
+## Design Theme
+- Primary colors: Slate gray (#0f172a, #1e293b) with red accents (#dc2626)
+- Modern dark theme throughout
+- Professional, serious aesthetic
+- Brando logo integrated in sidebar and login page
+
 ## Recent Changes
+- December 16, 2025: Complete UI redesign with modern dark theme and Brando branding
 - December 16, 2025: Initial Replit setup, database provisioned, schema pushed
 
 ## User Preferences
-- None documented yet
+- Modern, serious, professional design
+- Dark theme preferred
+- Brando brand identity
