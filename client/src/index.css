@@ -177,11 +177,11 @@
 
 @layer components {
   .gradient-bg {
-    background: linear-gradient(135deg, hsl(210 25% 25%) 0%, hsl(210 30% 35%) 50%, hsl(25 90% 50%) 100%);
+    background: linear-gradient(135deg, #1e293b 0%, #334155 50%, #dc2626 100%);
   }
 
   .gradient-text {
-    background: linear-gradient(135deg, hsl(210 30% 35%) 0%, hsl(25 90% 50%) 100%);
+    background: linear-gradient(135deg, #1e293b 0%, #dc2626 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
