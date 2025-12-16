@@ -24,6 +24,7 @@ export interface IStorage {
 
   listMasters(): Promise<Master[]>;
   getMaster(id: number): Promise<Master | undefined>;
+  getMasterByName(name: string): Promise<Master | undefined>;
   createMaster(master: InsertMaster): Promise<Master>;
   updateMaster(id: number, updates: Partial<InsertMaster>): Promise<Master | undefined>;
   deleteMaster(id: number): Promise<void>;
@@ -127,6 +128,11 @@ export class DatabaseStorage implements IStorage {
 
   async deleteClient(id: number): Promise<void> {
     await db.delete(clients).where(eq(clients.id, id));
+  }
+
+  async getMasterByName(name: string): Promise<Master | undefined> {
+    const result = await db.select().from(masters).where(ilike(masters.name, name)).limit(1);
+    return result[0];
   }
 
   async getCustomersFromOrders(search: string = ''): Promise<{ name: string | null; phone: string | null }[]> {

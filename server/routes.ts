@@ -55,28 +55,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const user = await storage.getUserByUsername(username);
 
-      if (!user) {
-        return res.status(401).json({ message: "Login yoki parol xato" });
+      if (user) {
+        if (user.password !== password) {
+          return res.status(401).json({ message: "Login yoki parol xato" });
+        }
+
+        await storage.updateUserLastLogin(user.id);
+
+        req.session.userId = user.id;
+        req.session.username = user.username;
+        req.session.role = user.role;
+        req.session.masterId = user.masterId || null;
+
+        return res.json({
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          role: user.role,
+          masterId: user.masterId || null,
+        });
       }
 
-      if (user.password !== password) {
-        return res.status(401).json({ message: "Login yoki parol xato" });
+      const master = await storage.getMasterByName(username);
+
+      if (master) {
+        const telegramIdStr = master.telegramId ? String(master.telegramId) : '';
+        
+        if (telegramIdStr && telegramIdStr === password) {
+          req.session.userId = `master_${master.id}`;
+          req.session.username = master.name || '';
+          req.session.role = 'master';
+          req.session.masterId = String(master.id);
+
+          return res.json({
+            id: `master_${master.id}`,
+            username: master.name || '',
+            fullName: master.name || 'Texnik',
+            role: 'master',
+            masterId: String(master.id),
+          });
+        }
       }
 
-      await storage.updateUserLastLogin(user.id);
-
-      req.session.userId = user.id;
-      req.session.username = user.username;
-      req.session.role = user.role;
-      req.session.masterId = user.masterId || null;
-
-      return res.json({
-        id: user.id,
-        username: user.username,
-        fullName: user.fullName,
-        role: user.role,
-        masterId: user.masterId || null,
-      });
+      return res.status(401).json({ message: "Login yoki parol xato" });
     } catch (error) {
       console.error("Login error:", error);
       return res.status(500).json({ message: "Server xatosi" });
@@ -95,6 +116,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/me", async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: "Autentifikatsiya talab qilinadi" });
+    }
+
+    if (req.session.userId.startsWith('master_') && req.session.role === 'master') {
+      const masterId = parseInt(req.session.masterId || '0', 10);
+      const master = await storage.getMaster(masterId);
+      
+      if (!master) {
+        return res.status(401).json({ message: "Texnik topilmadi" });
+      }
+
+      return res.json({
+        id: req.session.userId,
+        username: master.name || '',
+        fullName: master.name || 'Texnik',
+        role: 'master',
+        masterId: String(master.id),
+      });
     }
 
     const user = await storage.getUser(req.session.userId);
