@@ -39,7 +39,7 @@ export function Sidebar() {
             <Factory className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">Zavod CRM</h1>
+            <h1 className="text-lg font-bold text-white">Brando CallCenter CRM</h1>
             <p className="text-xs text-slate-400">Ishlab Chiqarish Tizimi</p>
           </div>
         </div>

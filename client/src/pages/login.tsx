@@ -34,7 +34,7 @@ export default function LoginPage() {
           <div className="slide-up">
             <div className="flex items-center gap-4 mb-6">
               <Factory className="w-14 h-14" />
-              <h1 className="text-5xl font-bold">Zavod CRM</h1>
+              <h1 className="text-5xl font-bold">Brando CallCenter CRM</h1>
             </div>
             <p className="text-xl text-white/90 mb-12 max-w-md">
               Ishlab chiqarish va xizmat ko'rsatishni boshqarish tizimi
@@ -86,7 +86,7 @@ export default function LoginPage() {
                 <Factory className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold gradient-text mb-2">Zavod CRM</h1>
+            <h1 className="text-3xl font-bold gradient-text mb-2">Brando CallCenter CRM</h1>
             <p className="text-sm text-muted-foreground">Tizimga kirish uchun ma'lumotlarni kiriting</p>
           </div>
 
