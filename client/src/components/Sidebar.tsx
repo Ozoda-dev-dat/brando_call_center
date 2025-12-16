@@ -8,7 +8,7 @@ const menuItems = [
   { id: 'tickets', label: 'Buyurtmalar', icon: FileText, path: '/', roles: ['admin', 'operator'], color: 'blue' },
   { id: 'calls', label: "Qo'ng'iroqlar", icon: Phone, path: '/calls', roles: ['admin', 'operator'], color: 'green' },
   { id: 'customers', label: 'Mijozlar', icon: Users, path: '/customers', roles: ['admin', 'operator'], color: 'purple' },
-  { id: 'service-centers', label: 'Ishlab Chiqarish Sexlari', icon: Building2, path: '/service-centers', roles: ['admin', 'operator'], color: 'orange' },
+  { id: 'service-centers', label: 'Serviz Markazlari', icon: Building2, path: '/service-centers', roles: ['admin', 'operator'], color: 'orange' },
   { id: 'masters', label: 'Texniklar', icon: Wrench, path: '/masters', roles: ['admin', 'operator', 'master'], color: 'cyan' },
   { id: 'dashboard', label: 'Boshqaruv Paneli', icon: LayoutDashboard, path: '/dashboard', roles: ['admin', 'operator'], color: 'indigo' },
   { id: 'reports', label: 'Hisobotlar', icon: FileBarChart, path: '/reports', roles: ['admin', 'operator'], color: 'pink' },

@@ -65,7 +65,32 @@ export function ReportsPanel() {
           </div>
           <p className="text-sm text-muted-foreground ml-[52px]">Haqiqiy ma'lumotlar asosida tahlil</p>
         </div>
-        <Button className="gap-2 action-button gradient-bg text-white border-0" data-testid="button-export-report">
+        <Button 
+          className="gap-2 action-button gradient-bg text-white border-0" 
+          data-testid="button-export-report"
+          onClick={() => {
+            if (!stats?.orders || stats.orders.length === 0) {
+              return;
+            }
+            const headers = ['ID', 'Mijoz', 'Telefon', 'Mahsulot', 'Holat', 'Sana'];
+            const rows = stats.orders.map((order: any) => [
+              order.id,
+              order.clientName || '',
+              order.clientPhone || '',
+              order.product || '',
+              order.status === 'delivered' ? 'Yetkazildi' :
+               order.status === 'on_way' ? 'Yo\'lda' :
+               order.status === 'in_progress' ? 'Jarayonda' : 'Yangi',
+              new Date(order.createdAt).toLocaleDateString('uz-UZ')
+            ]);
+            const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `hisobot_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+          }}
+        >
           <Download className="w-4 h-4" />
           Eksport Qilish
         </Button>
