@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogIn, AlertCircle, Phone, Users, Headphones } from 'lucide-react';
+import { LogIn, AlertCircle } from 'lucide-react';
 import brandoLogo from '@assets/Adobe_Express_-_file_1765916800203.png';
 
 export default function LoginPage() {
@@ -26,161 +26,137 @@ export default function LoginPage() {
     }
   };
 
+  const handleDemoLogin = (user: string, pass: string) => {
+    setUsername(user);
+    setPassword(pass);
+  };
+
   return (
-    <div className="min-h-screen w-full flex bg-slate-950">
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,_rgba(153,27,27,0.2),transparent_50%)]" />
-          <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_right,_rgba(153,27,27,0.15),transparent_50%)]" />
-        </div>
-        
-        <div className="relative z-10 flex flex-col justify-center items-center w-full p-12">
-          <div className="slide-up text-center mb-16">
-            <img src={brandoLogo} alt="Brando" className="h-20 mx-auto mb-8" />
-            <h2 className="text-2xl font-light text-white/80 tracking-wide">
-              CallCenter CRM
-            </h2>
-            <div className="w-24 h-0.5 bg-gradient-to-r from-transparent via-red-800 to-transparent mx-auto mt-6" />
-          </div>
-          
-          <div className="grid grid-cols-1 gap-4 w-full max-w-sm">
-            <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10 slide-up hover:bg-white/10 transition-all duration-300" style={{animationDelay: '0.1s'}}>
-              <div className="w-12 h-12 bg-red-800/20 rounded-lg flex items-center justify-center">
-                <Phone className="w-5 h-5 text-red-700" />
-              </div>
-              <div>
-                <h3 className="font-medium text-white">Qo'ng'iroqlar Boshqaruvi</h3>
-                <p className="text-sm text-white/50">Real-time call tracking</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10 slide-up hover:bg-white/10 transition-all duration-300" style={{animationDelay: '0.2s'}}>
-              <div className="w-12 h-12 bg-red-800/20 rounded-lg flex items-center justify-center">
-                <Users className="w-5 h-5 text-red-700" />
-              </div>
-              <div>
-                <h3 className="font-medium text-white">Mijozlar Bazasi</h3>
-                <p className="text-sm text-white/50">Customer management</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-4 bg-white/5 backdrop-blur-sm rounded-lg p-4 border border-white/10 slide-up hover:bg-white/10 transition-all duration-300" style={{animationDelay: '0.3s'}}>
-              <div className="w-12 h-12 bg-red-800/20 rounded-lg flex items-center justify-center">
-                <Headphones className="w-5 h-5 text-red-700" />
-              </div>
-              <div>
-                <h3 className="font-medium text-white">Operator Paneli</h3>
-                <p className="text-sm text-white/50">Agent dashboard</p>
-              </div>
-            </div>
-          </div>
-        </div>
+    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-red-800/10 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-red-800/10 rounded-full blur-3xl" />
       </div>
-      
-      <div className="flex-1 flex items-center justify-center p-6 bg-slate-950">
-        <div className="w-full max-w-md">
-          <div className="lg:hidden text-center mb-10">
-            <img src={brandoLogo} alt="Brando" className="h-14 mx-auto mb-4" />
-            <p className="text-sm text-slate-500">CallCenter CRM</p>
-          </div>
-          
-          <div className="bg-slate-900/50 backdrop-blur-xl rounded-2xl p-8 border border-slate-800 shadow-2xl">
-            <div className="text-center mb-8">
-              <h1 className="text-2xl font-semibold text-white mb-2">Tizimga kirish</h1>
-              <p className="text-sm text-slate-400">Hisobingiz ma'lumotlarini kiriting</p>
-            </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <label htmlFor="username" className="block text-sm font-medium text-slate-300">
-                  Login
-                </label>
-                <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Loginni kiriting"
-                  required
-                  disabled={isLoading}
-                  className="h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-red-800 focus:ring-red-800/20"
-                  data-testid="input-username"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="password" className="block text-sm font-medium text-slate-300">
-                  Parol
-                </label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Parolni kiriting"
-                  required
-                  disabled={isLoading}
-                  className="h-12 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 focus:border-red-800 focus:ring-red-800/20"
-                  data-testid="input-password"
-                />
-              </div>
-
-              {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-950/50 border border-red-900/50 rounded-lg">
-                  <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-                  <p className="text-sm text-red-400">{error}</p>
-                </div>
-              )}
-
-              <Button
-                type="submit"
-                className="w-full h-12 gap-2 text-base font-medium bg-red-800 hover:bg-red-900 text-white border-0 transition-all duration-200"
-                disabled={isLoading}
-                data-testid="button-login"
-              >
-                {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <LogIn className="w-5 h-5" />
-                )}
-                {isLoading ? 'Kirish...' : 'Kirish'}
-              </Button>
-            </form>
-
-            <div className="mt-8 pt-6 border-t border-slate-800">
-              <p className="text-xs text-slate-500 text-center mb-4">
-                Demo foydalanuvchilar
-              </p>
-              <div className="grid grid-cols-3 gap-2">
-                <button
-                  type="button"
-                  onClick={() => { setUsername('admin'); setPassword('admin2233'); }}
-                  className="p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition-all duration-200 text-center group"
-                >
-                  <p className="text-xs font-medium text-slate-400 group-hover:text-white">Admin</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setUsername('operator'); setPassword('callcenter123'); }}
-                  className="p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition-all duration-200 text-center group"
-                >
-                  <p className="text-xs font-medium text-slate-400 group-hover:text-white">Operator</p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setUsername('master'); setPassword('MS123'); }}
-                  className="p-3 rounded-lg bg-slate-800/50 hover:bg-slate-800 border border-slate-700/50 transition-all duration-200 text-center group"
-                >
-                  <p className="text-xs font-medium text-slate-400 group-hover:text-white">Texnik</p>
-                </button>
-              </div>
-            </div>
-          </div>
-          
-          <p className="text-center text-xs text-slate-600 mt-6">
-            Brando CallCenter CRM v1.0
-          </p>
+      <div className="relative w-full max-w-md">
+        <div className="text-center mb-8">
+          <img src={brandoLogo} alt="Brando" className="h-16 mx-auto mb-4" />
+          <p className="text-gray-400 text-sm tracking-widest uppercase">CallCenter CRM</p>
         </div>
+
+        <div className="bg-gray-800/50 backdrop-blur-xl rounded-3xl p-8 border border-gray-700/50 shadow-2xl">
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-bold text-white mb-2">Xush kelibsiz</h1>
+            <p className="text-gray-400 text-sm">Tizimga kirish uchun ma'lumotlaringizni kiriting</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-300">
+                Login
+              </label>
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Foydalanuvchi nomi"
+                required
+                disabled={isLoading}
+                autoComplete="username"
+                className="h-12 bg-gray-900/50 border-gray-600 text-white placeholder:text-gray-500 rounded-xl focus:border-red-700 focus:ring-red-700/30 transition-all"
+                data-testid="input-username"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+                Parol
+              </label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Parolingizni kiriting"
+                required
+                disabled={isLoading}
+                autoComplete="current-password"
+                className="h-12 bg-gray-900/50 border-gray-600 text-white placeholder:text-gray-500 rounded-xl focus:border-red-700 focus:ring-red-700/30 transition-all"
+                data-testid="input-password"
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-3 p-4 bg-red-900/30 border border-red-800/50 rounded-xl">
+                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+                <p className="text-sm text-red-300">{error}</p>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full h-12 gap-2 text-base font-semibold bg-gradient-to-r from-red-700 to-red-800 hover:from-red-800 hover:to-red-900 text-white border-0 rounded-xl shadow-lg shadow-red-900/30 transition-all duration-300"
+              disabled={isLoading}
+              data-testid="button-login"
+            >
+              {isLoading ? (
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <LogIn className="w-5 h-5" />
+              )}
+              {isLoading ? 'Kirish...' : 'Kirish'}
+            </Button>
+          </form>
+
+          <div className="mt-8">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-700" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-gray-800/50 px-3 text-gray-500">Demo hisoblar</span>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => handleDemoLogin('admin', 'admin2233')}
+                className="flex flex-col items-center gap-1 p-4 rounded-xl bg-gray-900/50 hover:bg-gray-700/50 border border-gray-700/50 hover:border-red-800/50 transition-all duration-300 group"
+              >
+                <div className="w-10 h-10 rounded-full bg-red-800/20 flex items-center justify-center mb-1 group-hover:bg-red-800/30 transition-colors">
+                  <span className="text-red-400 font-bold text-sm">A</span>
+                </div>
+                <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors">Admin</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDemoLogin('operator', 'callcenter123')}
+                className="flex flex-col items-center gap-1 p-4 rounded-xl bg-gray-900/50 hover:bg-gray-700/50 border border-gray-700/50 hover:border-red-800/50 transition-all duration-300 group"
+              >
+                <div className="w-10 h-10 rounded-full bg-red-800/20 flex items-center justify-center mb-1 group-hover:bg-red-800/30 transition-colors">
+                  <span className="text-red-400 font-bold text-sm">O</span>
+                </div>
+                <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors">Operator</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDemoLogin('master', 'MS123')}
+                className="flex flex-col items-center gap-1 p-4 rounded-xl bg-gray-900/50 hover:bg-gray-700/50 border border-gray-700/50 hover:border-red-800/50 transition-all duration-300 group"
+              >
+                <div className="w-10 h-10 rounded-full bg-red-800/20 flex items-center justify-center mb-1 group-hover:bg-red-800/30 transition-colors">
+                  <span className="text-red-400 font-bold text-sm">T</span>
+                </div>
+                <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors">Texnik</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <p className="text-center text-xs text-gray-600 mt-6">
+          Brando CallCenter CRM v1.0
+        </p>
       </div>
     </div>
   );
