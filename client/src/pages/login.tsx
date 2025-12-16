@@ -3,7 +3,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LogIn, AlertCircle, Phone, Users, Headphones } from 'lucide-react';
-import brandoLogo from '@assets/image_1765915500786.png';
+import brandoLogo from '@assets/Adobe_Express_-_file_1765916800203.png';
 
 export default function LoginPage() {
   const { login } = useAuth();

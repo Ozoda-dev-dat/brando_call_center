@@ -3,7 +3,7 @@ import { Link, useLocation } from 'wouter';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from './ui/button';
-import brandoLogo from '@assets/image_1765915500786.png';
+import brandoLogo from '@assets/Adobe_Express_-_file_1765916800203.png';
 
 const menuItems = [
   { id: 'tickets', label: 'Buyurtmalar', icon: FileText, path: '/', roles: ['admin', 'operator'] },
