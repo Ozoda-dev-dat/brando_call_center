@@ -561,7 +561,7 @@ export function WebRTCPhone() {
                   <div className="space-y-2">
                     <Label>Extension (Foydalanuvchi)</Label>
                     <Input
-                      placeholder="101"
+                      placeholder="100"
                       value={config.username}
                       onChange={(e) => saveConfig({ ...config, username: e.target.value })}
                     />
