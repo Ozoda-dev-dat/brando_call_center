@@ -40,7 +40,9 @@ export default function LoginPage() {
 
       <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
-          <img src={brandoLogo} alt="Brando" className="h-16 mx-auto mb-4" />
+          <div className="bg-white rounded-2xl p-4 px-6 inline-block mb-4 shadow-lg">
+            <img src={brandoLogo} alt="Brando" className="h-14" />
+          </div>
           <p className="text-gray-400 text-sm tracking-widest uppercase">CallCenter CRM</p>
         </div>
 
