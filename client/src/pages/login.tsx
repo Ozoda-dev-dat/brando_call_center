@@ -156,9 +156,17 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="text-center text-xs text-gray-600 mt-6">
-          Brando CallCenter CRM v1.0
-        </p>
+        <div className="text-center mt-6 space-y-1">
+          <p className="text-xs text-gray-600">Brando CallCenter CRM v1.0</p>
+          <a 
+            href="https://t.me/s0ft_engin_lady" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+          >
+            created by coder_girl
+          </a>
+        </div>
       </div>
     </div>
   );
