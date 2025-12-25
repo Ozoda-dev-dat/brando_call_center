@@ -41,3 +41,8 @@ externalPort = 3000
 deploymentTarget = "autoscale"
 run = ["npm", "run", "start"]
 build = ["npm", "run", "build"]
+
+[userenv]
+
+[userenv.shared]
+DATABASE_URL = "postgresql://neondb_owner:npg_6y5CkIGdYMhP@ep-silent-grass-adyk2ken-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
