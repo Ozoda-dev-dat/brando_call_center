@@ -59,6 +59,31 @@ export const insertClientSchema = createInsertSchema(clients).omit({
 export type InsertClient = z.infer<typeof insertClientSchema>;
 export type Client = typeof clients.$inferSelect;
 
+export const warehouses = pgTable("warehouses", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  region: text("region").notNull(),
+  managerName: text("manager_name"),
+});
+
+export const inventory = pgTable("inventory", {
+  id: serial("id").primaryKey(),
+  warehouseId: integer("warehouse_id").references(() => warehouses.id),
+  productName: text("product_name").notNull(),
+  quantity: integer("quantity").notNull().default(0),
+  lowStockThreshold: integer("low_stock_threshold").notNull().default(5),
+  unitPrice: doublePrecision("unit_price").notNull().default(0),
+});
+
+export const serviceFees = pgTable("service_fees", {
+  id: serial("id").primaryKey(),
+  orderId: integer("order_id").references(() => orders.id),
+  productPrice: doublePrecision("product_price").default(0),
+  distanceFee: doublePrecision("distance_fee").default(0),
+  serviceFee: doublePrecision("service_fee").default(0),
+  totalEarnings: doublePrecision("total_earnings").default(0),
+});
+
 export const orders = pgTable("orders", {
   id: serial("id").primaryKey(),
   masterId: integer("master_id"),
@@ -84,7 +109,18 @@ export const orders = pgTable("orders", {
   completionGpsLng: doublePrecision("completion_gps_lng"),
   masterTelegramId: bigint("master_telegram_id", { mode: "number" }),
   barcode: text("barcode"),
+  distanceKm: doublePrecision("distance_km").default(0),
+  isWarrantyRepair: boolean("is_warranty_repair").default(false),
+  complexity: text("complexity").default('standard'), // 'standard' or 'repair'
 });
+
+export const insertWarehouseSchema = createInsertSchema(warehouses).omit({ id: true });
+export const insertInventorySchema = createInsertSchema(inventory).omit({ id: true });
+export const insertServiceFeeSchema = createInsertSchema(serviceFees).omit({ id: true });
+
+export type Warehouse = typeof warehouses.$inferSelect;
+export type Inventory = typeof inventory.$inferSelect;
+export type ServiceFee = typeof serviceFees.$inferSelect;
 
 export const insertOrderSchema = createInsertSchema(orders).omit({
   id: true,
