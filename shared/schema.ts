@@ -134,3 +134,20 @@ export const tickets = orders;
 export type Ticket = Order;
 export type InsertTicket = InsertOrder;
 export const insertTicketSchema = insertOrderSchema;
+
+export const serviceCenters = pgTable("service_centers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  region: text("region").notNull(),
+  lat: doublePrecision("lat").notNull(),
+  lng: doublePrecision("lng").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertServiceCenterSchema = createInsertSchema(serviceCenters).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type ServiceCenter = typeof serviceCenters.$inferSelect;
+export type InsertServiceCenter = z.infer<typeof insertServiceCenterSchema>;

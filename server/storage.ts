@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool, neonConfig } from "@neondatabase/serverless";
-import { users, orders, masters, clients, type User, type InsertUser, type Order, type InsertOrder, type Master, type InsertMaster, type Client, type InsertClient } from "@shared/schema";
+import { users, orders, masters, clients, serviceCenters, type User, type InsertUser, type Order, type InsertOrder, type Master, type InsertMaster, type Client, type InsertClient, type ServiceCenter, type InsertServiceCenter } from "@shared/schema";
 import { eq, desc, sql, or, ilike } from "drizzle-orm";
 import ws from "ws";
 
@@ -34,6 +34,13 @@ export interface IStorage {
   createClient(client: InsertClient): Promise<Client>;
   updateClient(id: number, updates: Partial<InsertClient>): Promise<Client | undefined>;
   deleteClient(id: number): Promise<void>;
+
+  listServiceCenters(): Promise<ServiceCenter[]>;
+  getServiceCenter(id: number): Promise<ServiceCenter | undefined>;
+  createServiceCenter(center: InsertServiceCenter): Promise<ServiceCenter>;
+  updateServiceCenter(id: number, updates: Partial<InsertServiceCenter>): Promise<ServiceCenter | undefined>;
+  deleteServiceCenter(id: number): Promise<void>;
+  getServiceCenterStats(id: number): Promise<{ activeOrders: number; totalRevenue: number }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -152,6 +159,39 @@ export class DatabaseStorage implements IStorage {
   async getMasterByName(name: string): Promise<Master | undefined> {
     const result = await db.select().from(masters).where(ilike(masters.name, name)).limit(1);
     return result[0];
+  }
+
+  async listServiceCenters(): Promise<ServiceCenter[]> {
+    return await db.select().from(serviceCenters).orderBy(serviceCenters.name);
+  }
+
+  async getServiceCenter(id: number): Promise<ServiceCenter | undefined> {
+    const result = await db.select().from(serviceCenters).where(eq(serviceCenters.id, id)).limit(1);
+    return result[0];
+  }
+
+  async createServiceCenter(insertCenter: InsertServiceCenter): Promise<ServiceCenter> {
+    const result = await db.insert(serviceCenters).values(insertCenter as any).returning();
+    return result[0];
+  }
+
+  async updateServiceCenter(id: number, updates: Partial<InsertServiceCenter>): Promise<ServiceCenter | undefined> {
+    const result = await db.update(serviceCenters).set(updates as any).where(eq(serviceCenters.id, id)).returning();
+    return result[0];
+  }
+
+  async deleteServiceCenter(id: number): Promise<void> {
+    await db.delete(serviceCenters).where(eq(serviceCenters.id, id));
+  }
+
+  async getServiceCenterStats(centerId: number): Promise<{ activeOrders: number; totalRevenue: number }> {
+    const activeOrdersResult = await db.select({ count: sql`COUNT(*)` }).from(orders).where(eq(orders.masterId, centerId));
+    const activeOrders = parseInt(activeOrdersResult[0]?.count as string || '0', 10);
+    
+    const revenueResult = await db.select({ total: sql`SUM(${serviceFees.totalEarnings})` }).from(serviceFees).innerJoin(orders, eq(serviceFees.orderId, orders.id)).where(eq(orders.masterId, centerId));
+    const totalRevenue = parseFloat(revenueResult[0]?.total as string || '0');
+
+    return { activeOrders, totalRevenue };
   }
 
   async getCustomersFromOrders(search: string = ''): Promise<{ name: string | null; phone: string | null }[]> {

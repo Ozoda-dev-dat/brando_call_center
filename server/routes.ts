@@ -832,6 +832,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.json({ message: 'Call ended', callData });
   });
 
+  // --- Service Centers ---
+  app.get('/api/service-centers', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const centers = await storage.listServiceCenters();
+      return res.json(centers);
+    } catch (error) {
+      console.error('Error listing service centers:', error);
+      return res.status(500).json({ message: 'Error listing service centers' });
+    }
+  });
+
+  app.get('/api/service-centers/:id', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      const center = await storage.getServiceCenter(id);
+      if (!center) {
+        return res.status(404).json({ message: 'Service center not found' });
+      }
+      const stats = await storage.getServiceCenterStats(id);
+      return res.json({ ...center, ...stats });
+    } catch (error) {
+      console.error('Error getting service center:', error);
+      return res.status(500).json({ message: 'Error getting service center' });
+    }
+  });
+
+  app.post('/api/service-centers', async (req, res) => {
+    if (!req.session.userId || req.session.role !== 'admin') {
+      return res.status(401).json({ message: 'Admin authentication required' });
+    }
+    try {
+      const { name, region, lat, lng } = req.body;
+      if (!name || !region || lat === undefined || lng === undefined) {
+        return res.status(400).json({ message: 'Missing required fields' });
+      }
+      const center = await storage.createServiceCenter({ name, region, lat, lng });
+      broadcast({ type: 'service_center_created', data: center });
+      return res.json(center);
+    } catch (error) {
+      console.error('Error creating service center:', error);
+      return res.status(500).json({ message: 'Error creating service center' });
+    }
+  });
+
+  app.patch('/api/service-centers/:id', async (req, res) => {
+    if (!req.session.userId || req.session.role !== 'admin') {
+      return res.status(401).json({ message: 'Admin authentication required' });
+    }
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      const center = await storage.updateServiceCenter(id, req.body);
+      if (!center) {
+        return res.status(404).json({ message: 'Service center not found' });
+      }
+      broadcast({ type: 'service_center_updated', data: center });
+      return res.json(center);
+    } catch (error) {
+      console.error('Error updating service center:', error);
+      return res.status(500).json({ message: 'Error updating service center' });
+    }
+  });
+
+  app.delete('/api/service-centers/:id', async (req, res) => {
+    if (!req.session.userId || req.session.role !== 'admin') {
+      return res.status(401).json({ message: 'Admin authentication required' });
+    }
+    try {
+      const id = parseInt(req.params.id, 10);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      await storage.deleteServiceCenter(id);
+      broadcast({ type: 'service_center_deleted', data: { id } });
+      return res.json({ message: 'Service center deleted' });
+    } catch (error) {
+      console.error('Error deleting service center:', error);
+      return res.status(500).json({ message: 'Error deleting service center' });
+    }
+  });
+
   const httpServer = createServer(app);
 
   // WebSocket server with session authentication
