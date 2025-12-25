@@ -76,8 +76,27 @@ export class DatabaseStorage implements IStorage {
     return result[0];
   }
 
-  async listOrders(): Promise<Order[]> {
-    return await db.select().from(orders).orderBy(desc(orders.createdAt));
+  async listOrders(): Promise<any[]> {
+    return await db
+      .select({
+        id: orders.id,
+        masterId: orders.masterId,
+        clientName: orders.clientName,
+        clientPhone: orders.clientPhone,
+        address: orders.address,
+        lat: orders.lat,
+        lng: orders.lng,
+        product: orders.product,
+        quantity: orders.quantity,
+        status: orders.status,
+        createdAt: orders.createdAt,
+        warrantyExpired: orders.warrantyExpired,
+        distanceKm: orders.distanceKm,
+        masterName: masters.name,
+      })
+      .from(orders)
+      .leftJoin(masters, eq(orders.masterId, masters.id))
+      .orderBy(desc(orders.createdAt));
   }
 
   async deleteOrder(id: number): Promise<void> {

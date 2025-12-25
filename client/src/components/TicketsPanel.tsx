@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, FileText, Clock, CheckCircle2, AlertTriangle, Loader2, Plus, X, Edit, Trash2, Eye } from 'lucide-react';
+import { Search, Filter, FileText, Clock, CheckCircle2, AlertTriangle, Loader2, Plus, X, Edit, Trash2, Eye, MapPin } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -277,10 +277,11 @@ export function TicketsPanel() {
   };
 
   const filteredTickets = tickets.filter(ticket => {
+    const searchLower = searchTerm.toLowerCase();
     const matchesSearch = !searchTerm || 
-      ticket.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      ticket.clientPhone?.includes(searchTerm) ||
-      ticket.id.toString().includes(searchTerm);
+      (ticket.clientName?.toLowerCase().includes(searchLower)) ||
+      (ticket.clientPhone?.includes(searchTerm)) ||
+      (ticket.id.toString().includes(searchTerm));
     
     const matchesStatus = statusFilter === 'all' || ticket.status === statusFilter;
     
@@ -418,30 +419,46 @@ export function TicketsPanel() {
                     <p className="text-sm font-medium">{ticket.product || '-'}</p>
                   </div>
                   <div className="p-3 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Soni</p>
-                    <p className="text-sm font-medium">{ticket.quantity || 1}</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Kafolat</p>
+                    <p className="text-sm font-medium">{ticket.warrantyExpired ? '❌' : '✅'}</p>
+                  </div>
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">To'lov (Masofa)</p>
+                    <p className="text-sm font-medium">
+                      {ticket.distanceKm ? `${(ticket.distanceKm * 3000).toLocaleString()} so'm` : '0 so'm'}
+                    </p>
                   </div>
                   <div className="p-3 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30">
                     <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Manzil</p>
-                    <p className="text-sm font-medium truncate">{ticket.address || '-'}</p>
-                  </div>
-                  <div className="p-3 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Sana</p>
-                    <p className="text-sm font-medium">
-                      {new Date(ticket.createdAt).toLocaleDateString('uz-UZ')}
-                    </p>
+                    <div className="flex items-center gap-1">
+                      <p className="text-sm font-medium truncate">{ticket.address || '-'}</p>
+                      {ticket.lat && ticket.lng && (
+                        <a 
+                          href={`https://www.google.com/maps?q=${ticket.lat},${ticket.lng}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:text-blue-700"
+                        >
+                          <MapPin className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                {masterInfo && (
-                  <div className="flex items-center gap-2 text-sm p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                <div className="flex items-center gap-4 text-sm p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20">
+                  <div className="flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-blue-600" />
                     <span className="text-muted-foreground">Usta:</span>
-                    <span className="font-medium">{masterInfo.name}</span>
-                    <span className="text-muted-foreground">•</span>
-                    <span className="text-muted-foreground">{masterInfo.phone}</span>
+                    <span className="font-medium">{ticket.masterName || 'Tayinlanmagan'}</span>
                   </div>
-                )}
+                  {ticket.clientPhone && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">•</span>
+                      <span className="text-muted-foreground">{ticket.clientPhone}</span>
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex gap-2 mt-4 pt-4 border-t">
                   <Select value={ticket.status} onValueChange={(value) => handleStatusChange(ticket.id, value)}>
