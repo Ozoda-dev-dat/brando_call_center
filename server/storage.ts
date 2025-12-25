@@ -167,12 +167,30 @@ export class DatabaseStorage implements IStorage {
       return await baseQuery.where(
         or(
           ilike(orders.clientName, searchPattern),
-          ilike(orders.clientPhone, searchPattern)
+          ilike(orders.clientPhone, searchPattern),
+          ilike(orders.address, searchPattern)
         )
       );
     }
 
     return await baseQuery;
+  }
+
+  async getCustomerHistory(name: string, phone: string): Promise<any[]> {
+    return await db
+      .select({
+        id: orders.id,
+        status: orders.status,
+        createdAt: orders.createdAt,
+        product: orders.product,
+        address: orders.address,
+        totalEarnings: sql`COALESCE((SELECT total_earnings FROM service_fees WHERE order_id = ${orders.id}), 0)`
+      })
+      .from(orders)
+      .where(
+        sql`${orders.clientName} = ${name} AND ${orders.clientPhone} = ${phone}`
+      )
+      .orderBy(desc(orders.createdAt));
   }
 }
 

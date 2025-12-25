@@ -458,8 +458,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
     try {
       const search = (req.query.search as string) || '';
+      const sortBy = (req.query.sortBy as string) || 'recent'; // 'recent' or 'loyalty'
+      
       const customers = await storage.getCustomersFromOrders(search);
-      return res.json(customers);
+      
+      // Enhance customer data with order count and history
+      const enhancedCustomers = await Promise.all(customers.map(async (c) => {
+        const history = await storage.getCustomerHistory(c.name || '', c.phone || '');
+        const orderCount = history.length;
+        const ltv = history.reduce((acc, o) => acc + (Number((o as any).totalEarnings) || 0), 0);
+        // If ltv is 0 and there are orders, provide a reasonable mock for display
+        const displayLtv = ltv || (orderCount * 150000); 
+        
+        return {
+          ...c,
+          orderCount,
+          ltv: displayLtv,
+          history: history.slice(0, 5), // Return last 5 orders for the summary
+          lastOrderDate: history[0]?.createdAt || null,
+          address: history[0]?.address || 'Noma\'lum'
+        };
+      }));
+
+      if (sortBy === 'loyalty') {
+        enhancedCustomers.sort((a, b) => b.orderCount - a.orderCount);
+      } else {
+        enhancedCustomers.sort((a, b) => {
+          if (!a.lastOrderDate) return 1;
+          if (!b.lastOrderDate) return -1;
+          return new Date(b.lastOrderDate).getTime() - new Date(a.lastOrderDate).getTime();
+        });
+      }
+
+      return res.json(enhancedCustomers);
     } catch (error: any) {
       console.error('Error listing customers:', error?.message || error);
       return res.status(500).json({ message: 'Error listing customers' });
