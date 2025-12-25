@@ -35,6 +35,8 @@ interface Ticket {
   estimatedCost?: number | null;
   actualCost?: number | null;
   distance?: number | null;
+  distanceKm?: number | null;
+  warrantyExpired?: boolean | null;
 }
 
 interface Master {
@@ -425,7 +427,7 @@ export function TicketsPanel() {
                   <div className="p-3 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30">
                     <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">To'lov (Masofa)</p>
                     <p className="text-sm font-medium">
-                      {ticket.distanceKm ? `${(ticket.distanceKm * 3000).toLocaleString()} so'm` : '0 so'm'}
+                      {ticket.distanceKm ? `${(ticket.distanceKm * 3000).toLocaleString()} so'm` : "0 so'm"}
                     </p>
                   </div>
                   <div className="p-3 rounded-xl bg-gradient-to-br from-muted/50 to-muted/30">

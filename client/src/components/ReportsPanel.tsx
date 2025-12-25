@@ -1,4 +1,4 @@
-import { Calendar, Download, TrendingUp, FileText, Users, BarChart3, PieChart, ArrowUpRight, DollarSign, MapPin, Package, AlertCircle } from 'lucide-react';
+import { Calendar, Download, TrendingUp, FileText, Users, BarChart3, PieChart, ArrowUpRight, DollarSign, MapPin, Package, AlertCircle, Clock } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
