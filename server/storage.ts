@@ -224,7 +224,7 @@ export class DatabaseStorage implements IStorage {
         createdAt: orders.createdAt,
         product: orders.product,
         address: orders.address,
-        totalEarnings: sql`COALESCE((SELECT total_earnings FROM service_fees WHERE order_id = ${orders.id}), 0)`
+        totalEarnings: sql`COALESCE((SELECT COALESCE(total_earnings, 0) FROM service_fees WHERE order_id = ${orders.id} LIMIT 1), 0)`
       })
       .from(orders)
       .where(
