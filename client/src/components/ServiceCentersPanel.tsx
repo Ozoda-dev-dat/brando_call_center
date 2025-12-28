@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { MapPin, Plus, Edit2, Trash2, Loader } from 'lucide-react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import type { ServiceCenter } from '@shared/schema';
 
 const defaultIcon = L.icon({
