@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { Pool, neonConfig } from "@neondatabase/serverless";
-import { users, orders, masters, clients, serviceCenters, type User, type InsertUser, type Order, type InsertOrder, type Master, type InsertMaster, type Client, type InsertClient, type ServiceCenter, type InsertServiceCenter } from "@shared/schema";
+import { users, orders, masters, clients, serviceCenters, serviceFees, type User, type InsertUser, type Order, type InsertOrder, type Master, type InsertMaster, type Client, type InsertClient, type ServiceCenter, type InsertServiceCenter } from "@shared/schema";
 import { eq, desc, sql, or, ilike } from "drizzle-orm";
 import ws from "ws";
 

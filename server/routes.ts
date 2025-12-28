@@ -313,7 +313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: 'Invalid ID' });
       }
       
-      const allOrders = await storage.getOrders();
+      const allOrders = await storage.listOrders();
       const masterOrders = allOrders.filter((o: any) => o.masterId === masterId);
       const activeOrders = masterOrders.filter((o: any) => o.status !== 'completed').length;
       const completedOrders = masterOrders.filter((o: any) => o.status === 'completed').length;
