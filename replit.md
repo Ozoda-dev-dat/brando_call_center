@@ -42,6 +42,22 @@ Preferred communication style: Simple, everyday language.
 3. **Dual entry points**: Separate dev (`index-dev.ts`) and prod (`index-prod.ts`) server configurations
 4. **Vite integration**: Development server proxies API requests, production serves static build
 
+## Implemented Features
+
+### Pages
+1. **Dashboard (Bosh Sahifa)** - Real-time statistics, active orders, master performance
+2. **Tickets/Orders (Buyurtmalar)** - Order management, status tracking, photo upload
+3. **Calls (Qo'ng'iroqlar)** - Call history and integration
+4. **Customers (Mijozlar Bazasi)** - Customer database with order history and LTV
+5. **Technicians (Texniklar)** - Comprehensive technician management with:
+   - Real-time status (Online/Offline based on last location update)
+   - Active and completed orders tracking
+   - Search, filter by region, and sorting functionality
+   - Expandable row details with location and performance stats
+   - Add/Edit technician modal forms
+6. **Service Centers (Xizmat Markazlari)** - Service center map with Leaflet, load monitoring, revenue tracking
+7. **Reports** - Performance analytics and reporting
+
 ## External Dependencies
 
 ### Database
@@ -60,11 +76,23 @@ Preferred communication style: Simple, everyday language.
   - Requires `TELEGRAM_BOT_TOKEN` and `MASTER_TELEGRAM_MAP` (JSON mapping masterId to chatId)
 
 ### Mapping
-- **Leaflet**: Interactive maps for service center locations
+- **Leaflet**: Interactive maps for service center locations and technician tracking
 - **React-Leaflet**: React wrapper for Leaflet
 
 ### Charts & Visualization
 - **Recharts**: Dashboard charts and reporting visualizations
+
+## Recent Changes (Dec 28, 2025)
+
+1. **Fixed Customers Page** - Created `service_fees` table, fixed order-based customer data retrieval
+2. **Implemented Technician Management Page** - Complete redesign with:
+   - Table layout with sortable columns (Name, Phone, Region, Status, Active Orders, Completed, Last Update)
+   - Real-time status indicator based on last location update
+   - Row expansion for detailed technician view
+   - Statistics dashboard (Total, Online, Active, Regions)
+   - Add/Edit modal forms with region dropdown
+   - Search and filter by region functionality
+   - `/api/masters/:id/stats` endpoint for order counts
 
 ### Environment Variables Required
 ```

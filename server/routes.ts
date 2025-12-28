@@ -303,6 +303,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get('/api/masters/:id/stats', async (req, res) => {
+    if (!req.session.userId) {
+      return res.status(401).json({ message: 'Authentication required' });
+    }
+    try {
+      const masterId = parseInt(req.params.id, 10);
+      if (isNaN(masterId)) {
+        return res.status(400).json({ message: 'Invalid ID' });
+      }
+      
+      const allOrders = await storage.getOrders();
+      const masterOrders = allOrders.filter((o: any) => o.masterId === masterId);
+      const activeOrders = masterOrders.filter((o: any) => o.status !== 'completed').length;
+      const completedOrders = masterOrders.filter((o: any) => o.status === 'completed').length;
+      
+      return res.json({ activeOrders, completedOrders });
+    } catch (error) {
+      console.error('Error getting master stats', error);
+      return res.status(500).json({ message: 'Error getting master stats' });
+    }
+  });
+
   app.post('/api/masters', async (req, res) => {
     if (!req.session.userId) {
       return res.status(401).json({ message: 'Authentication required' });

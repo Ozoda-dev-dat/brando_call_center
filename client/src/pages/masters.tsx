@@ -1,5 +1,5 @@
-import { MastersPanel } from '@/components/MastersPanel';
+import { TechniciansPanel } from '@/components/TechniciansPanel';
 
 export default function MastersPage() {
-  return <MastersPanel />;
+  return <TechniciansPanel />;
 }
