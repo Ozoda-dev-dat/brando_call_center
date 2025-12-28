@@ -31,11 +31,10 @@ export const masters = pgTable("masters", {
   phone: text("phone"),
   telegramId: bigint("telegram_id", { mode: "number" }),
   region: text("region"),
-  masterLat: text("master_lat"),
-  baseLng: text("base_lng"),
   lastLat: text("last_lat"),
   lastLng: text("last_lng"),
   lastLocationUpdate: timestamp("last_location_update", { withTimezone: true }),
+  serviceCenterId: integer("service_center_id"),
 });
 
 export const insertMasterSchema = createInsertSchema(masters).omit({
