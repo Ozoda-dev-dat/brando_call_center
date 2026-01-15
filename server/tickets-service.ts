@@ -17,6 +17,9 @@ class OrdersService {
       status: orderData.status || 'new',
       warrantyExpired: orderData.warrantyExpired || null,
       barcode: orderData.barcode || null,
+      distanceKm: orderData.distanceKm || 0,
+      isWarrantyRepair: orderData.isWarrantyRepair || false,
+      complexity: orderData.complexity || 'standard',
     };
 
     return await storage.createOrder(newOrder);

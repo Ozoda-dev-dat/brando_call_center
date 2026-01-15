@@ -174,7 +174,10 @@ export function TicketsPanel() {
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to create ticket');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create ticket');
+      }
       
       toast({ title: 'Muvaffaqiyat', description: 'Buyurtma yaratildi' });
       setIsCreateOpen(false);
